@@ -20,7 +20,7 @@ import su.plo.voice.client.config.ClientConfig;
 import su.plo.voice.client.gui.VoiceHud;
 import su.plo.voice.client.gui.VoiceNotAvailableScreen;
 import su.plo.voice.client.gui.VoiceSettingsScreen;
-import su.plo.voice.client.network.ClientNetworkHandlerFabric;
+import su.plo.voice.client.network.ClientNetworkHandler;
 
 @Environment(EnvType.CLIENT)
 public class VoiceClientFabric extends VoiceClient implements ClientModInitializer {
@@ -35,8 +35,13 @@ public class VoiceClientFabric extends VoiceClient implements ClientModInitializ
                         "Plasmo Voice")
         );
 
-        ClientNetworkHandlerFabric network = new ClientNetworkHandlerFabric();
-        ClientPlayNetworking.registerGlobalReceiver(PLASMO_VOICE, network::handle);
+        ClientPlayNetworking.registerGlobalReceiver(PLASMO_VOICE, ((client, handler, buf, responseSender) -> {
+            if (this.network == null) {
+                this.network = new ClientNetworkHandler(handler.getConnection());
+            }
+
+            this.network.handle(buf);
+        }));
 
         ClientCommandManager.DISPATCHER.register(ClientCommandManager.literal("vc")
                 .then(ClientCommandManager.literal("muteall")

@@ -9,11 +9,13 @@ val minecraftVersion: String by rootProject
 val fabricLoaderVersion: String by rootProject
 val fabricVersion: String by rootProject
 val modVersion: String by rootProject
+val serverVersion: String by rootProject
 val mavenGroup: String by rootProject
 val curseProjectId: String by rootProject
 val curseFabricRelease: String by rootProject
 val curseDisplayVersion: String by rootProject
 val curseSupportedVersions: String by rootProject
+
 
 configurations {
     create("shadowCommon")
@@ -35,10 +37,18 @@ dependencies {
     minecraft("com.mojang:minecraft:${minecraftVersion}")
     mappings(loom.officialMojangMappings())
 
-    implementation(project(":common")) {
+    implementation(project(":api")) {
         isTransitive = false
     }
-    project.configurations.getByName("developmentFabric")(project(":common")) {
+
+    "shadowCommon"(project(":api")) {
+        isTransitive = false
+    }
+
+    implementation(project(":common", "dev")) {
+        isTransitive = false
+    }
+    project.configurations.getByName("developmentFabric")(project(":common", "dev")) {
         isTransitive = false
     }
     "shadowCommon"(project(":common", "transformProductionFabric")) {
@@ -49,17 +59,13 @@ dependencies {
     modApi("net.fabricmc.fabric-api:fabric-api:${fabricVersion}")
 
     // Fabric API jar-in-jar
-    include("net.fabricmc.fabric-api:fabric-api-base:0.3.0+a02b446318")?.let { modImplementation(it) }
-    include("net.fabricmc.fabric-api:fabric-command-api-v1:1.1.3+5ab9934c18")?.let { modImplementation(it) }
-    include("net.fabricmc.fabric-api:fabric-key-binding-api-v1:1.0.4+cbda931818")?.let { modImplementation(it) }
-    include("net.fabricmc.fabric-api:fabric-lifecycle-events-v1:1.4.4+a02b446318")?.let { modImplementation(it) }
-    include("net.fabricmc.fabric-api:fabric-networking-api-v1:1.0.13+cbda931818")?.let { modImplementation(it) }
-    include("net.fabricmc.fabric-api:fabric-rendering-v1:1.9.0+7931163218")?.let { modImplementation(it) }
-    include("net.fabricmc.fabric-api:fabric-resource-loader-v0:0.4.8+a00e834b18")?.let { modImplementation(it) }
-
-    // Plasmo Voice protocol
-    implementation("su.plo.voice:common:1.0.0")
-    "shadowCommon"("su.plo.voice:common:1.0.0")
+//    include("net.fabricmc.fabric-api:fabric-api-base:0.3.0+a02b446318")?.let { modImplementation(it) }
+//    include("net.fabricmc.fabric-api:fabric-command-api-v1:1.1.3+5ab9934c18")?.let { modImplementation(it) }
+//    include("net.fabricmc.fabric-api:fabric-key-binding-api-v1:1.0.4+cbda931818")?.let { modImplementation(it) }
+//    include("net.fabricmc.fabric-api:fabric-lifecycle-events-v1:1.4.4+a02b446318")?.let { modImplementation(it) }
+//    include("net.fabricmc.fabric-api:fabric-networking-api-v1:1.0.13+cbda931818")?.let { modImplementation(it) }
+//    include("net.fabricmc.fabric-api:fabric-rendering-v1:1.9.0+7931163218")?.let { modImplementation(it) }
+//    include("net.fabricmc.fabric-api:fabric-resource-loader-v0:0.4.8+a00e834b18")?.let { modImplementation(it) }
 
     // YAML for server config
     implementation("org.yaml:snakeyaml:1.29")
@@ -73,30 +79,21 @@ dependencies {
     implementation("su.plo.voice:rnnoise:1.0.0")
     "shadowCommon"("su.plo.voice:rnnoise:1.0.0")
 
+    // Lombok
     compileOnly("org.projectlombok:lombok:1.18.20")
     annotationProcessor("org.projectlombok:lombok:1.18.20")
-
-    testCompileOnly("org.projectlombok:lombok:1.18.20")
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.20")
-}
-
-repositories {
-    maven {
-        url = uri("https://repo.plo.su")
-    }
-    mavenCentral()
-    mavenLocal()
 }
 
 tasks {
-    java {
-        withSourcesJar()
+    jar {
+        classifier = "dev"
     }
 
     processResources {
         filesMatching("fabric.mod.json") {
             expand(
                 mutableMapOf(
+                    "server_version" to serverVersion,
                     "version" to modVersion,
                     "loader_version" to fabricLoaderVersion,
                     "fabric_version" to fabricVersion
@@ -107,6 +104,7 @@ tasks {
 
     shadowJar {
         configurations = listOf(project.configurations.getByName("shadowCommon"))
+        classifier = "dev-shadow"
 
         dependencies {
             exclude(dependency("net.java.dev.jna:jna"))
@@ -115,8 +113,8 @@ tasks {
     }
 
     remapJar {
-        dependsOn(getByName<ShadowJar>("shadowJar"))
         input.set(shadowJar.get().archiveFile)
+        dependsOn(getByName<ShadowJar>("shadowJar"))
         archiveBaseName.set("plasmovoice-fabric-${minecraftVersion}")
     }
 

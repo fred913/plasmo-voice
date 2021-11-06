@@ -18,12 +18,11 @@ public class ServerConfig {
     private final short maxPriorityDistance;
     private final int fadeDivisor;
     private final int priorityFadeDivisor;
-    private final boolean disableVoiceActivation;
 
     public ServerConfig(String ip, int port,
                         String proxyIp, int proxyPort,
                         int sampleRate, List<Integer> distances, int defaultDistance,
-                        int maxPriorityDistance, boolean disableVoiceActivation,
+                        int maxPriorityDistance,
                         int fadeDivisor, int priorityFadeDivisor) {
         this.ip = ip;
         this.port = port;
@@ -36,6 +35,5 @@ public class ServerConfig {
         this.maxPriorityDistance = maxPriorityDistance > 0 ? (short) maxPriorityDistance : Short.MAX_VALUE;
         this.fadeDivisor = fadeDivisor;
         this.priorityFadeDivisor = priorityFadeDivisor;
-        this.disableVoiceActivation = disableVoiceActivation;
     }
 }

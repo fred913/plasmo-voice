@@ -3,7 +3,7 @@ package su.plo.voice.client.network;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import net.minecraft.network.FriendlyByteBuf;
-import su.plo.voice.common.packets.Packet;
+import su.plo.voice.protocol.packets.Packet;
 
 import java.io.IOException;
 

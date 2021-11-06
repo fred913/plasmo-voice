@@ -1,8 +1,8 @@
 package su.plo.voice.client.sound.capture;
 
 import su.plo.voice.client.VoiceClient;
-import su.plo.voice.client.sound.Recorder;
-import su.plo.voice.client.sound.VolumeAdjuster;
+import su.plo.voice.client.sound.AudioCapture;
+import su.plo.voice.client.utils.AudioUtils;
 
 import javax.sound.sampled.*;
 import java.util.ArrayList;
@@ -10,8 +10,6 @@ import java.util.List;
 
 public class JavaxCaptureDevice implements CaptureDevice {
     private TargetDataLine device;
-
-    private final VolumeAdjuster adjuster = new VolumeAdjuster();
 
     public void open() throws IllegalStateException {
         if (isOpen()) {
@@ -28,7 +26,7 @@ public class JavaxCaptureDevice implements CaptureDevice {
         }
 
         try {
-            device.open(Recorder.getFormat());
+            device.open(AudioCapture.getFormat());
         } catch (LineUnavailableException e) {
             throw new IllegalStateException(e.getMessage());
         }
@@ -69,16 +67,14 @@ public class JavaxCaptureDevice implements CaptureDevice {
         return 0;
     }
 
-    public byte[] read(int frameSize) {
+    public short[] capture(int frameSize) {
         byte[] buffer = new byte[frameSize];
         int read = device.read(buffer, 0, frameSize);
         if (read == -1) {
             return null;
         }
 
-        adjuster.adjust(buffer, VoiceClient.getClientConfig().microphoneAmplification.get().floatValue());
-
-        return buffer;
+        return AudioUtils.bytesToShorts(buffer);
     }
 
     public boolean isOpen() {

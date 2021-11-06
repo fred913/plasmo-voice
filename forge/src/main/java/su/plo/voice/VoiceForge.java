@@ -8,10 +8,12 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fmllegacy.network.NetworkDirection;
 import net.minecraftforge.fmllegacy.network.NetworkRegistry;
 import net.minecraftforge.fmllegacy.network.event.EventNetworkChannel;
+import su.plo.voice.client.VoiceClient;
 import su.plo.voice.client.VoiceClientForge;
+import su.plo.voice.client.network.ClientNetworkHandler;
 import su.plo.voice.server.VoiceServer;
 import su.plo.voice.server.VoiceServerForge;
-import su.plo.voice.server.network.ServerNetworkHandlerForge;
+import su.plo.voice.server.mod.network.ServerNetworkHandlerForge;
 
 @Mod("plasmo_voice")
 public class VoiceForge {
@@ -40,7 +42,13 @@ public class VoiceForge {
             }
 
             if (e.getSource().get().getDirection().equals(NetworkDirection.PLAY_TO_CLIENT)) {
-                VoiceClientForge.getNetwork().handle(e.getSource().get().getNetworkManager(), e.getPayload());
+                if (VoiceClient.getInstance().getNetwork() == null) {
+                    VoiceClient.getInstance().setNetwork(
+                            new ClientNetworkHandler(e.getSource().get().getNetworkManager())
+                    );
+                }
+
+                VoiceClient.getInstance().getNetwork().handle(e.getPayload());
             } else {
                 ((ServerNetworkHandlerForge) VoiceServer.getNetwork()).handle(e.getSource().get().getSender(), e.getPayload());
             }

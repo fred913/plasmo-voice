@@ -27,7 +27,7 @@ public interface CaptureDevice {
      * @param frameSize
      * @return samples or null if frameSize > available samples
      */
-    byte[] read(int frameSize);
+    short[] capture(int frameSize);
 
     /**
      * @return true if capture device is open

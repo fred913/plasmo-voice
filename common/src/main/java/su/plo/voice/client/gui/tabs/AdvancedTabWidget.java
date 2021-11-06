@@ -1,17 +1,23 @@
 package su.plo.voice.client.gui.tabs;
 
+import com.google.common.collect.ImmutableList;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import su.plo.voice.client.VoiceClient;
 import su.plo.voice.client.config.ClientConfig;
 import su.plo.voice.client.gui.VoiceSettingsScreen;
 import su.plo.voice.client.gui.widgets.ConfigIntegerSlider;
+import su.plo.voice.client.gui.widgets.DropDownWidget;
 import su.plo.voice.client.gui.widgets.MicrophoneThresholdWidget;
 import su.plo.voice.client.gui.widgets.ToggleButton;
-import su.plo.voice.client.socket.SocketClientUDPQueue;
+import su.plo.voice.client.socket.SocketClientUDPListener;
 import su.plo.voice.client.utils.TextUtils;
 import su.plo.voice.rnnoise.Denoiser;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class AdvancedTabWidget extends TabWidget {
     public AdvancedTabWidget(Minecraft client, VoiceSettingsScreen parent) {
@@ -38,9 +44,39 @@ public class AdvancedTabWidget extends TabWidget {
         );
         this.addEntry(new OptionEntry(
                 new TranslatableComponent("gui.plasmo_voice.advanced.microphone_testing"),
-                new MicrophoneThresholdWidget(0, 0, 97, false, parent),
+                new MicrophoneThresholdWidget(0, 0, 97, parent.getSource() != null, false, parent),
                 null,
                 null)
+        );
+        List<String> bitRates = ImmutableList.of(
+                "72",
+                "96",
+                "128",
+                "192",
+                "256",
+                "384",
+                "512"
+        );
+        List<Component> bitRatesMessages = new ArrayList<>();
+        for (String bitRate : bitRates) {
+            bitRatesMessages.add(new TextComponent(bitRate + " kbps"));
+        }
+        this.addEntry(new OptionEntry(
+                new TranslatableComponent("jopus mode"),
+                new DropDownWidget(parent, 0, 0, 97, 20,
+                        new TextComponent(config.bitrate.get() + " kbps"),
+                        bitRatesMessages,
+                        false,
+                        i -> {
+                            int rate = Integer.parseInt(bitRates.get(i));
+                            VoiceClient.recorder.updateBitRate(rate * 1000);
+                            config.bitrate.set(rate);
+                        }),
+                config.bitrate,
+                (button, element) -> {
+                    VoiceClient.recorder.updateBitRate(config.bitrate.get() * 1000);
+                    element.setMessage(new TextComponent(config.bitrate.get() + " kbps"));
+                })
         );
 //        this.addEntry(new OptionEntry(
 //                new TranslatableComponent("jopus mode"),
@@ -115,7 +151,7 @@ public class AdvancedTabWidget extends TabWidget {
                 TextUtils.multiLine("gui.plasmo_voice.advanced.directional_sources.tooltip", 5),
                 (button, element) -> {
                     // kill all queues to prevent possible problems
-                    SocketClientUDPQueue.closeAll();
+                    SocketClientUDPListener.closeAll();
 
                     directionalSourcesAngle.active = config.directionalSources.get();
                     ((ToggleButton) element).updateValue();
@@ -128,7 +164,7 @@ public class AdvancedTabWidget extends TabWidget {
                 TextUtils.multiLine("gui.plasmo_voice.advanced.directional_sources_angle.tooltip", 4),
                 (button, element) -> {
                     // kill all queues to prevent possible problems
-                    SocketClientUDPQueue.closeAll();
+                    SocketClientUDPListener.closeAll();
 
                     ((ConfigIntegerSlider) element).updateValue();
                 })

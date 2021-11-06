@@ -15,8 +15,6 @@ import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.Scoreboard;
 import su.plo.voice.client.VoiceClient;
 import su.plo.voice.client.gui.PlayerVolumeHandler;
-import su.plo.voice.client.socket.SocketClientUDPQueue;
-import su.plo.voice.common.entities.MutedEntity;
 
 public class CustomEntityRenderer {
     private static final Minecraft client = Minecraft.getInstance();
@@ -39,18 +37,13 @@ public class CustomEntityRenderer {
             return;
         }
 
-        if (VoiceClient.getServerConfig().getClients().contains(player.getUUID())) {
+        if (VoiceClient.getNetwork().hasVoiceChat(player.getUUID())) {
             if (VoiceClient.getClientConfig().isMuted(player.getUUID())) {
                 renderIcon(80, 0, player, distance, matrices, hasLabel, vertexConsumers, light);
-            } else if (VoiceClient.getServerConfig().getMuted().containsKey(player.getUUID())) {
-                MutedEntity muted = VoiceClient.getServerConfig().getMuted().get(player.getUUID());
-                if (muted.to == 0 || muted.to > System.currentTimeMillis()) {
-                    renderIcon(80, 0, player, distance, matrices, hasLabel, vertexConsumers, light);
-                } else {
-                    VoiceClient.getServerConfig().getMuted().remove(muted.uuid);
-                }
+            } else if (VoiceClient.getNetwork().isPlayerMuted(player.getUUID())) {
+                renderIcon(80, 0, player, distance, matrices, hasLabel, vertexConsumers, light);
             } else {
-                Boolean isTalking = SocketClientUDPQueue.talking.get(player.getUUID());
+                Boolean isTalking = VoiceClient.getNetwork().getTalking(player.getUUID());
                 if (isTalking != null) {
                     if (isTalking) {
                         renderIcon(96, 0, player, distance, matrices, hasLabel, vertexConsumers, light);

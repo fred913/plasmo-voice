@@ -5,11 +5,11 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.openal.AL10;
 import org.lwjgl.system.MemoryUtil;
-import su.plo.voice.client.sound.Recorder;
+import su.plo.voice.client.sound.AudioCapture;
 
 import javax.sound.sampled.AudioFormat;
 import java.nio.Buffer;
-import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -42,7 +42,7 @@ public class CustomSource {
             freeBuffers.offer(buffer);
         }
 
-        this.format = AlUtil.getFormatId(Recorder.getFormat());
+        this.format = AlUtil.getFormatId(AudioCapture.getFormat());
     }
 
     public int getPointer() {
@@ -175,17 +175,17 @@ public class CustomSource {
         return (int)((float)(time * format.getSampleSizeInBits()) / 8.0F * (float)format.getChannels() * format.getSampleRate());
     }
 
-    public void write(byte[] bytes) {
+    public void write(short[] shorts) {
         this.removeProcessedBuffers();
 
         if (!freeBuffers.isEmpty()) {
-            ByteBuffer byteBuffer = MemoryUtil.memAlloc(bytes.length);
-            byteBuffer.put(bytes);
-            ((Buffer) byteBuffer).flip(); // java 8 support
+            ShortBuffer buffer = MemoryUtil.memAllocShort(shorts.length);
+            buffer.put(shorts);
+            ((Buffer) buffer).flip(); // java 8 support
 
             int freeBuffer = freeBuffers.poll();
 
-            AL10.alBufferData(freeBuffer, format, byteBuffer, (int)Recorder.getFormat().getSampleRate());
+            AL10.alBufferData(freeBuffer, format, buffer, (int) AudioCapture.getFormat().getSampleRate());
             if (AlUtil.checkErrors("Assigning buffer data")) {
                 return;
             }

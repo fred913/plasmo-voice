@@ -5,20 +5,25 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import su.plo.voice.api.ServerMuteEntry;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @AllArgsConstructor
 @Data
 public class ServerData {
-    private final static Gson gson = new Gson();
+    protected final static Gson gson = new Gson();
 
-    private final List<ServerMuted> muted;
-    private final Map<UUID, Map<String, Boolean>> permissions;
+    private final List<ServerMuteEntry> muted;
 
-    public static ServerData read() {
-        File dataFile = new File("config/PlasmoVoice/server_data.json");
+    public ServerData() {
+        this.muted = new ArrayList<>();
+    }
+
+    public static ServerData read(File dataFolder) {
+        File dataFile = new File(dataFolder, "server_data.json");
         if(dataFile.exists()) {
             try {
                 JsonReader reader = new JsonReader(new FileReader(dataFile));
@@ -30,16 +35,15 @@ public class ServerData {
             } catch (FileNotFoundException ignored) {}
         }
 
-        return new ServerData(new ArrayList<>(), new HashMap<>());
+        return new ServerData();
     }
 
-    public static void saveAsync(ServerData data) {
+    public static void saveAsync(File dataFolder, ServerData data) {
         new Thread(() -> {
-            File configDir = new File("config/PlasmoVoice");
-            configDir.mkdirs();
+            dataFolder.mkdirs();
 
             try {
-                try (Writer w = new FileWriter("config/PlasmoVoice/server_data.json")) {
+                try (Writer w = new FileWriter(new File(dataFolder, "server_data.json"))) {
                     w.write(gson.toJson(data));
                 }
             } catch (IOException e) {
@@ -48,12 +52,11 @@ public class ServerData {
         }).start();
     }
 
-    public static void save(ServerData data) {
-        File configDir = new File("config/PlasmoVoice");
-        configDir.mkdirs();
+    public static void save(File dataFolder, ServerData data) {
+        dataFolder.mkdirs();
 
         try {
-            try (Writer w = new FileWriter("config/PlasmoVoice/server_data.json")) {
+            try (Writer w = new FileWriter(new File(dataFolder, "server_data.json"))) {
                 w.write(gson.toJson(data));
             }
         } catch (IOException e) {

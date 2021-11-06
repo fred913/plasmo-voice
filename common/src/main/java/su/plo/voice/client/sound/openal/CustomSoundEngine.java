@@ -12,9 +12,9 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.openal.*;
 import su.plo.voice.client.VoiceClient;
 import su.plo.voice.client.gui.VoiceSettingsScreen;
-import su.plo.voice.client.socket.SocketClientUDPQueue;
+import su.plo.voice.client.socket.SocketClientUDPListener;
 import su.plo.voice.client.sound.AbstractSoundQueue;
-import su.plo.voice.client.sound.Recorder;
+import su.plo.voice.client.sound.AudioCapture;
 import su.plo.voice.client.sound.capture.JavaxCaptureDevice;
 
 import java.lang.reflect.InvocationTargetException;
@@ -52,10 +52,10 @@ public class CustomSoundEngine {
     }
 
     public void restart() {
-        SocketClientUDPQueue.audioChannels
+        SocketClientUDPListener.audioChannels
                 .values()
-                .forEach(AbstractSoundQueue::closeAndKill);
-        SocketClientUDPQueue.audioChannels.clear();
+                .forEach(AbstractSoundQueue::close);
+        SocketClientUDPListener.audioChannels.clear();
 
         this.close();
         this.init();
@@ -238,9 +238,9 @@ public class CustomSoundEngine {
         long l;
         if (deviceName == null) {
             // default device
-            l = ALC11.alcCaptureOpenDevice((ByteBuffer)null, Recorder.getSampleRate(), AL11.AL_FORMAT_MONO16, Recorder.getFrameSize());
+            l = ALC11.alcCaptureOpenDevice((ByteBuffer)null, AudioCapture.getSampleRate(), AL11.AL_FORMAT_MONO16, AudioCapture.getFrameSize());
         } else {
-            l = ALC11.alcCaptureOpenDevice(deviceName, Recorder.getSampleRate(), AL11.AL_FORMAT_MONO16, Recorder.getFrameSize());
+            l = ALC11.alcCaptureOpenDevice(deviceName, AudioCapture.getSampleRate(), AL11.AL_FORMAT_MONO16, AudioCapture.getFrameSize());
         }
 
         if (l != 0L && !AlUtil.checkAlcErrors(l, "Open device")) {

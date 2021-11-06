@@ -1,9 +1,9 @@
 package su.plo.voice.server.socket;
 
-import net.minecraft.server.level.ServerPlayer;
-import su.plo.voice.common.packets.Packet;
-import su.plo.voice.common.packets.udp.PacketUDP;
-import su.plo.voice.server.PlayerManager;
+import su.plo.voice.api.player.VoicePlayer;
+import su.plo.voice.protocol.packets.Packet;
+import su.plo.voice.protocol.packets.udp.AbstractPacketUdp;
+import su.plo.voice.protocol.packets.udp.MessageUdp;
 import su.plo.voice.server.VoiceServer;
 
 import java.io.IOException;
@@ -25,53 +25,40 @@ public class SocketServerUDP extends Thread {
         this.queue.start();
     }
 
-    public static void sendToNearbyPlayers(Packet packet, ServerPlayer player, double maxDistance) {
+    public static void sendToNearbyPlayers(AbstractPacketUdp packet,
+                                           Long timestamp,
+                                           long sequenceNumber, VoicePlayer player, double maxDistance) {
         double maxDistanceSquared = maxDistance * maxDistance * 1.25F;
 
-        byte[] bytes;
-        try {
-            bytes = PacketUDP.write(packet);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        }
-
+        byte[] bytes = MessageUdp.write((Packet) packet, timestamp, sequenceNumber);
         SocketServerUDP.clients.forEach((uuid, sock) -> {
-            if (!player.getUUID().equals(uuid)) {
-                ServerPlayer p = PlayerManager.getByUUID(uuid);
-
-                if (maxDistanceSquared > 0) {
-                    if (!player.getLevel().equals(p.getLevel())) {
-                        return;
-                    }
-
-                    try {
-                        if (player.position().distanceToSqr(p.position()) > maxDistanceSquared) {
-                            return;
-                        }
-                    } catch (IllegalArgumentException ignored) {
-                        return;
-                    }
-                }
-
-                try {
-                    SocketServerUDP.sendTo(bytes, sock);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+//            if (!player.getUniqueId().equals(uuid)) {
+//                VoicePlayer p = VoiceServer.getAPI().getPlayerManager().getByUniqueId(uuid);
+//
+//                if (maxDistanceSquared > 0) {
+//                    if (!player.inRadius(p, maxDistanceSquared)) {
+//                        return;
+//                    }
+//                }
+//
+//                SocketServerUDP.sendTo(bytes, sock);
+//            }
+            SocketServerUDP.sendTo(bytes, sock);
         });
     }
 
-    public static SocketClientUDP getSender(PacketUDP packet) {
+    public static SocketClientUDP getSender(MessageUdp packet) {
         return clients.values().stream()
-                .filter(connection -> connection.getAddress()
-                        .equals(packet.getAddress()) && connection.getPort() == packet.getPort())
+                .filter(connection -> connection.getAddress().equals(packet.getAddress())) // todo check if works properly with proxy
                 .findAny().orElse(null);
     }
 
-    public static void sendTo(byte[] data, SocketClientUDP connection) throws IOException {
-        socket.send(new DatagramPacket(data, data.length, connection.getAddress(), connection.getPort()));
+    public static void sendTo(byte[] data, SocketClientUDP connection) {
+        try {
+            socket.send(new DatagramPacket(data, data.length, connection.getAddress()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void close() {
@@ -98,13 +85,17 @@ public class SocketServerUDP extends Thread {
 
         while (!socket.isClosed()) {
             try {
-                PacketUDP message = PacketUDP.read(socket);
-                this.queue.queue.offer(message);
-
-                synchronized (this.queue) {
-                    this.queue.notify();
+                MessageUdp message = MessageUdp.read(socket);
+                if (message == null) {
+                    return;
                 }
-            } catch (IllegalStateException | IOException | InstantiationException e) { // bad packet? just ignore it 4HEad
+
+                queue.queue.offer(message);
+
+                synchronized (queue) {
+                    queue.notify();
+                }
+            } catch (IllegalStateException | IOException e) { // bad packet? just ignore it 4HEad
                 if (VoiceServer.getInstance().getConfig().getBoolean("debug")) {
                     e.printStackTrace();
                 }

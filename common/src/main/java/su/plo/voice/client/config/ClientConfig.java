@@ -62,6 +62,7 @@ public class ClientConfig {
     public BooleanConfigEntry rnNoise = new BooleanConfigEntry();
     public BooleanConfigEntry microphoneMuted = new BooleanConfigEntry();
     public BooleanConfigEntry javaxCapture = new BooleanConfigEntry();
+    public IntegerConfigEntry bitrate = new IntegerConfigEntry();
     // todo opus application mode
 //    public StringConfigEntry jopusMode = new StringConfigEntry();
 
@@ -82,6 +83,9 @@ public class ClientConfig {
 
     // UI
     public BooleanConfigEntry showPriorityVolume = new BooleanConfigEntry();
+
+    // debug
+    public BooleanConfigEntry debug = new BooleanConfigEntry();
 
     @Getter
     private transient HashSet<UUID> muted = new HashSet<>();
@@ -143,6 +147,8 @@ public class ClientConfig {
     }
 
     protected void setupDefaults() {
+        debug.setDefault(false);
+
         occlusion.setDefault(false);
         showIcons.setDefault(0, 0, 2);
         micIconPosition.setDefault(MicrophoneIconPosition.BOTTOM_CENTER);
@@ -164,6 +170,7 @@ public class ClientConfig {
         compressor.setDefault(true);
         compressorThreshold.setDefault(-10, -60, 0);
         limiterThreshold.setDefault(-6, -60, 0);
+        bitrate.setDefault(72);
 
 //        jopusMode.setDefault("voip");
 

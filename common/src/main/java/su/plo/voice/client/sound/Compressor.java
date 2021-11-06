@@ -1,6 +1,7 @@
 package su.plo.voice.client.sound;
 
 import su.plo.voice.client.VoiceClient;
+import su.plo.voice.client.gui.VoiceSettingsScreen;
 import su.plo.voice.client.utils.AudioUtils;
 
 // todo priority sidechain
@@ -15,22 +16,22 @@ public class Compressor {
     private float[] envelopeBuf = new float[0];
     private float envelope;
 
-    public synchronized byte[] compress(byte[] audio) {
-        float[] audioFloats = AudioUtils.bytesToFloats(audio);
+    public synchronized short[] compress(short[] audio) {
+        float[] audioFloats = AudioUtils.shortsToFloats(audio);
 
         analyzeEnvelope(audioFloats);
         process(audioFloats);
 
         limiter.limit(audioFloats);
 
-        return AudioUtils.floatsToBytes(audioFloats);
+        return AudioUtils.floatsToShorts(audioFloats);
     }
 
     private synchronized void analyzeEnvelope(float[] samples) {
         this.envelopeBuf = new float[samples.length];
 
-        float attackGain = AudioUtils.gainCoefficient(Recorder.getSampleRate(), attackTime / 1000F);
-        float releaseGain = AudioUtils.gainCoefficient(Recorder.getSampleRate(), releaseTime / 1000F);
+        float attackGain = AudioUtils.gainCoefficient(AudioCapture.getSampleRate(), attackTime / 1000F);
+        float releaseGain = AudioUtils.gainCoefficient(AudioCapture.getSampleRate(), releaseTime / 1000F);
 
         float env = this.envelope;
         for (int i = 0; i < samples.length; i++) {
@@ -44,6 +45,7 @@ public class Compressor {
             this.envelopeBuf[i] = Math.max(this.envelopeBuf[i], env);
         }
         this.envelope = envelopeBuf[samples.length - 1];
+        System.out.println(this.envelope);
     }
 
     private synchronized void process(float[] samples) {
@@ -54,9 +56,8 @@ public class Compressor {
             float envDB = AudioUtils.mulToDB(this.envelopeBuf[i]);
 
             float compressorGain = compressorSlope * (compressorThreshold - envDB);
+            VoiceSettingsScreen.roflanDebugText = String.valueOf(compressorGain);
             compressorGain = AudioUtils.dbToMul(Math.min(0, compressorGain));
-
-//            VoiceSettingsScreen.roflanDebugText = String.valueOf(compressorGain);
 
             samples[i] *= compressorGain * outputGain;
 

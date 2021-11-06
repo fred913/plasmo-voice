@@ -10,6 +10,7 @@ import su.plo.voice.client.config.ClientConfig;
 import su.plo.voice.client.gui.MicIconPositionScreen;
 import su.plo.voice.client.gui.VoiceSettingsScreen;
 import su.plo.voice.client.gui.widgets.*;
+import su.plo.voice.client.sound.activation.Activation;
 import su.plo.voice.client.sound.openal.CustomSoundEngine;
 import su.plo.voice.client.utils.TextUtils;
 
@@ -157,20 +158,25 @@ public class GeneralTabWidget extends TabWidget {
                 })
         );
 
-        MicrophoneThresholdWidget activationThreshold = new MicrophoneThresholdWidget(0, 0, 97, true, parent);
+        MicrophoneThresholdWidget activationThreshold = new MicrophoneThresholdWidget(0, 0, 97, parent.getSource() != null, true, parent);
         String[] activations = new String[]{"gui.plasmo_voice.general.activation.ptt", "gui.plasmo_voice.general.activation.voice"};
         Button voiceActivation = new Button(0, 0, 97, 20, onOff(VoiceClient.getClientConfig().voiceActivation.get()
-                        && !VoiceClient.getServerConfig().isVoiceActivationDisabled(),
+                        && VoiceClient.getServerConfig().isActivation(),
                 activations),
                 button -> {
                     VoiceClient.getClientConfig().voiceActivation.invert();
                     boolean enableVoiceActivation = VoiceClient.getClientConfig().voiceActivation.get()
-                            && !VoiceClient.getServerConfig().isVoiceActivationDisabled();
+                            && VoiceClient.getServerConfig().isActivation();
+
+                    VoiceClient.recorder.updateActivation(enableVoiceActivation
+                            ? Activation.Type.Voice
+                            : Activation.Type.PushToTalk);
+
                     button.setMessage(onOff(enableVoiceActivation, activations));
                     activationThreshold.active = enableVoiceActivation;
                 });
 
-        voiceActivation.active = !VoiceClient.getServerConfig().isVoiceActivationDisabled();
+        voiceActivation.active = VoiceClient.getServerConfig().isActivation();
         activationThreshold.active = VoiceClient.getClientConfig().voiceActivation.get();
 
         this.addEntry(new CategoryEntry(new TranslatableComponent("gui.plasmo_voice.general.activation")));
@@ -180,10 +186,10 @@ public class GeneralTabWidget extends TabWidget {
                 VoiceClient.getClientConfig().voiceActivation,
                 TextUtils.multiLine("gui.plasmo_voice.general.activation.type.tooltip", 5),
                 (button, element) -> {
+                    VoiceClient.recorder.updateActivation(Activation.Type.PushToTalk);
+
                     activationThreshold.active = false;
-                    element.setMessage(onOff(VoiceClient.getClientConfig().voiceActivation.get()
-                                    && !VoiceClient.getServerConfig().isVoiceActivationDisabled(),
-                            activations));
+                    element.setMessage(onOff(false, activations));
                 })
         );
         this.addEntry(new OptionEntry(

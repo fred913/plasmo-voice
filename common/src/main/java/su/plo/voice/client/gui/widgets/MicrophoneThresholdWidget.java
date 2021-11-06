@@ -22,7 +22,7 @@ public class MicrophoneThresholdWidget extends AbstractSliderButton {
     private final boolean slider;
     private List<BackgroundImageButton> microphoneTest;
 
-    public MicrophoneThresholdWidget(int x, int y, int width, boolean slider, VoiceSettingsScreen parent) {
+    public MicrophoneThresholdWidget(int x, int y, int width, boolean active, boolean slider, VoiceSettingsScreen parent) {
         super(x, y, width - 23, 20, TextComponent.EMPTY, 0.0D);
         this.slider = slider;
         this.updateValue();
@@ -44,8 +44,11 @@ public class MicrophoneThresholdWidget extends AbstractSliderButton {
             });
         });
 
-        speakerHide.visible = false;
         speakerShow.active = VoiceClient.recorder.isAvailable();
+
+        speakerHide.visible = active;
+        speakerShow.visible = !active;
+
         this.parent = parent;
         this.microphoneTest = ImmutableList.of(speakerHide, speakerShow);
     }

@@ -28,7 +28,7 @@ import su.plo.voice.client.config.ClientConfig;
 import su.plo.voice.client.gui.particle.BlockDustParticle2D;
 import su.plo.voice.client.gui.tabs.*;
 import su.plo.voice.client.gui.widgets.MicrophoneThresholdWidget;
-import su.plo.voice.client.socket.SocketClientUDPQueue;
+import su.plo.voice.client.socket.SocketClientUDPListener;
 import su.plo.voice.client.sound.Compressor;
 import su.plo.voice.client.sound.openal.CustomSource;
 import su.plo.voice.client.utils.AudioUtils;
@@ -38,6 +38,8 @@ import java.util.*;
 public class VoiceSettingsScreen extends Screen {
     private static final int minWidth = 640;
     private final Minecraft client = Minecraft.getInstance();
+
+    public static String roflanDebugText = "";
 
     // tabs
     private TabWidget aboutWidget;
@@ -107,9 +109,9 @@ public class VoiceSettingsScreen extends Screen {
         return about ? aboutWidget : this.tabWidgets.get(active);
     }
 
-    public void setMicrophoneValue(byte[] buffer) {
+    public void setMicrophoneValue(final short[] buffer) {
         if (VoiceClient.getClientConfig().compressor.get()) {
-            buffer = compressor.compress(buffer);
+            compressor.compress(buffer);
         }
 
         microphoneDB = AudioUtils.getHighestAudioLevel(buffer);
@@ -129,11 +131,10 @@ public class VoiceSettingsScreen extends Screen {
         }
 
         if (source != null) {
-            byte[] finalBuffer = buffer;
             VoiceClient.getSoundEngine().runInContext(() -> {
                 source.setPosition(new Vec3(0, 0, 0));
                 source.setVolume(VoiceClient.getClientConfig().voiceVolume.get().floatValue());
-                source.write(finalBuffer);
+                source.write(buffer);
             });
         }
     }
@@ -228,7 +229,7 @@ public class VoiceSettingsScreen extends Screen {
             this.muteSpeakerButtons.get(1).visible = true;
             config.speakerMuted.invert();
 
-            SocketClientUDPQueue.closeAll();
+            SocketClientUDPListener.closeAll();
 
             if (!config.microphoneMuted.get()) {
                 this.muteMicButtons.get(0).visible = false;
@@ -507,6 +508,6 @@ public class VoiceSettingsScreen extends Screen {
             this.renderComponentTooltip(matrices, this.tooltip, mouseX, mouseY);
         }
 
-//        this.drawString(matrices, minecraft.font, roflanDebugText, 16, 64, 16777215);
+        this.drawString(matrices, minecraft.font, roflanDebugText, 16, 64, 16777215);
     }
 }

@@ -10,12 +10,8 @@ import su.plo.voice.client.event.ClientInputEvent;
 import su.plo.voice.client.event.ClientNetworkEvent;
 import su.plo.voice.client.event.RenderEvent;
 import su.plo.voice.client.event.VoiceChatCommandEvent;
-import su.plo.voice.client.network.ClientNetworkHandlerForge;
 
 public class VoiceClientForge extends VoiceClient {
-    @Getter
-    private static final ClientNetworkHandlerForge network = new ClientNetworkHandlerForge();
-
     public VoiceClientForge() {
         MinecraftForge.EVENT_BUS.register(new ClientInputEvent());
         MinecraftForge.EVENT_BUS.register(new ClientNetworkEvent());

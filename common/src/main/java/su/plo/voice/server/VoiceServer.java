@@ -1,13 +1,16 @@
 package su.plo.voice.server;
 
 import lombok.Getter;
-import lombok.Setter;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.MinecraftServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import su.plo.voice.server.config.*;
-import su.plo.voice.server.metrics.Metrics;
+import org.jetbrains.annotations.Nullable;
+import su.plo.voice.api.ConfigMessages;
+import su.plo.voice.api.PlasmoVoiceAPI;
+import su.plo.voice.api.player.PlayerManager;
+import su.plo.voice.server.config.Configuration;
+import su.plo.voice.server.config.ConfigurationProvider;
+import su.plo.voice.server.config.ServerConfig;
+import su.plo.voice.server.config.YamlConfiguration;
 import su.plo.voice.server.network.ServerNetworkHandler;
 import su.plo.voice.server.socket.SocketServerUDP;
 
@@ -15,63 +18,39 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
-public abstract class VoiceServer {
-    @Getter
-    protected static ServerNetworkHandler network;
-
-    public static final String VERSION = "1.0.6";
-
-    @Getter
-    @Setter
-    private static MinecraftServer server;
-
-    @Getter
-    private static final PlayerManager playerManager = new PlayerManager();
-
+public abstract class VoiceServer implements ConfigMessages {
     @Getter
     private static VoiceServer instance;
-    public static final Logger LOGGER = LogManager.getLogger("Plasmo Voice");
-    public static final ResourceLocation PLASMO_VOICE = new ResourceLocation("plasmo:voice");
-    public static final UUID NIL_UUID = new UUID(0, 0);
 
-    // protocol version
-    public static final String rawVersion = "1.0.0";
-    public static final int version = calculateVersion(rawVersion);
-    public static final String rawMinVersion = "0.0.6";
-    public static final int minVersion = calculateVersion(rawMinVersion);
+    public static final Logger LOGGER = LogManager.getLogger("Plasmo Voice");
+
+    protected  final SourceManager sources = new SourceManager();
+    protected final PlayerManager playerManager;
+    protected final ServerNetworkHandler network;
+
+    private SocketServerUDP udpServer;
 
     @Getter
-    @Setter
-    private static ServerConfig serverConfig;
-    private SocketServerUDP udpServer;
+    protected static ServerConfig serverConfig;
 
     @Getter
     protected Configuration config;
 
     @Getter
-    private static final ConcurrentHashMap<UUID, ServerMuted> muted = new ConcurrentHashMap<>();
+    protected static PlasmoVoiceAPI API;
 
-    private Metrics metrics;
-
-    protected void setupMetrics(String software) {
-        metrics = new Metrics(10928, software.toLowerCase(), server);
-        metrics.addCustomChart(new Metrics.SingleLineChart("players_with_forge_mod", () ->
-                (int) SocketServerUDP.clients.values().stream().filter(s -> s.getType().equals("forge")).count()));
-        metrics.addCustomChart(new Metrics.SingleLineChart("players_with_fabric_mod", () ->
-                (int) SocketServerUDP.clients.values().stream().filter(s -> s.getType().equals("fabric")).count()));
-
-        metrics.addCustomChart(new Metrics.SimplePie("server_type", () -> software));
+    protected VoiceServer(PlayerManager playerManager, ServerNetworkHandler network) {
+        this.playerManager = playerManager;
+        this.network = network;
     }
 
     protected void start() {
         instance = this;
         loadConfig();
         updateConfig();
+        loadData();
 
         udpServer = new SocketServerUDP(serverConfig.getIp(), serverConfig.getPort());
         udpServer.start();
@@ -82,52 +61,25 @@ public abstract class VoiceServer {
             udpServer.close();
         }
 
-        if (metrics != null) {
-            metrics.close();
-        }
-
-        ServerNetworkHandler.playerToken.clear();
-
-        saveData(false);
-    }
-
-    public static void saveData(boolean async) {
-        if (async) {
-            ServerData.saveAsync(new ServerData(new ArrayList<>(muted.values()), playerManager.getPermissions()));
-        } else {
-            ServerData.save(new ServerData(new ArrayList<>(muted.values()), playerManager.getPermissions()));
-        }
-    }
-
-    public static int calculateVersion(String s) {
-        int ver = 0;
-        String[] version = s.split("\\.");
-        try {
-            ver += Integer.parseInt(version[0]) * 1000;
-            ver += Integer.parseInt(version[1]) * 100;
-            ver += Integer.parseInt(version[2]);
-        } catch (NumberFormatException ignored) {
-        }
-
-        return ver;
+        saveData(true);
     }
 
     public void loadConfig() {
         try {
             // Save default config
-            File configDir = new File("config/PlasmoVoice");
+            File configDir = getDataFolder();
             configDir.mkdirs();
 
-            File file = new File(configDir, "server.yml");
+            File file = new File(configDir, "config.yml");
 
             if (!file.exists()) {
-                try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("server.yml")) {
+                try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("config.yml")) {
                     Files.copy(in, file.toPath());
                 }
             }
 
             Configuration defaults;
-            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("server.yml")) {
+            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("config.yml")) {
                 defaults = ConfigurationProvider.getProvider(YamlConfiguration.class)
                         .load(in);
             }
@@ -137,15 +89,6 @@ public abstract class VoiceServer {
                     .load(file, defaults);
         } catch (IOException e) {
             e.printStackTrace();
-        }
-
-        ServerData serverData = ServerData.read();
-        if (serverData != null) {
-            for (ServerMuted e : serverData.getMuted()) {
-                muted.put(e.getUuid(), e);
-            }
-
-            playerManager.getPermissions().putAll(serverData.getPermissions());
         }
     }
 
@@ -186,7 +129,7 @@ public abstract class VoiceServer {
 
         int udpPort = config.getInt("udp.port");
         if (udpPort == 0) {
-            udpPort = server.getPort();
+            udpPort = getPort();
 
             // integrated server, use 60606
             if (udpPort == -1) {
@@ -203,16 +146,12 @@ public abstract class VoiceServer {
                 distances,
                 defaultDistance,
                 config.getInt("max_priority_distance"),
-                config.getBoolean("disable_voice_activation"),
                 fadeDivisor,
                 priorityFadeDivisor);
     }
 
-    public static boolean isLogsEnabled() {
-        return !VoiceServer.getInstance().getConfig().getBoolean("disable_logs");
-    }
-
-    // Get message with prefix from config
+    @Nullable
+    @Override
     public String getMessagePrefix(String name) {
         // Get message or use default value
         String message = config.getString("messages." + name);
@@ -225,7 +164,8 @@ public abstract class VoiceServer {
         return this.getPrefix() + message;
     }
 
-    // Get message from config
+    @Nullable
+    @Override
     public String getMessage(String name) {
         // Get message or use default value
         String message = config.getString("messages." + name);
@@ -238,8 +178,46 @@ public abstract class VoiceServer {
         return message;
     }
 
-    // Get plugin prefix from config
+    @Nullable
+    @Override
     public String getPrefix() {
         return config.getString("messages.prefix").replace('&', '\u00A7');
     }
+
+    public static ServerNetworkHandler getNetwork() {
+        return instance.network;
+    }
+
+    public static SourceManager getSources() {
+        return instance.sources;
+    }
+
+    public static int[] calculateVersion(String s) {
+        int[] version = new int[3];
+        String[] split = s.split("\\.");
+        try {
+            version[0] = Integer.parseInt(split[0]);
+            version[1] = Integer.parseInt(split[1]);
+            version[2] = Integer.parseInt(split[2]);
+        } catch (NumberFormatException ignored) {
+        }
+
+        return version;
+    }
+
+    public static boolean isLogsEnabled() {
+        return !instance.getConfig().getBoolean("disable_logs");
+    }
+
+    public abstract void runAsync(Runnable runnable);
+
+    public abstract int getPort();
+
+    public abstract File getDataFolder();
+
+    public abstract void loadData();
+
+    public abstract void saveData(boolean async);
+
+    public abstract int[] getVersion();
 }

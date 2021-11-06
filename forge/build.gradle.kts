@@ -50,8 +50,8 @@ dependencies {
     "shadowCommon"("org.yaml:snakeyaml:1.29")
 
     // Plasmo Voice protocol
-    implementation("su.plo.voice:common:1.0.0")
-    "shadowCommon"("su.plo.voice:common:1.0.0")
+    implementation("su.plo.voice:common:2.0.0")
+    "shadowCommon"("su.plo.voice:common:2.0.0")
 
     // Opus
     implementation("su.plo.voice:opus:1.1.2")
@@ -66,14 +66,6 @@ dependencies {
 
     testCompileOnly("org.projectlombok:lombok:1.18.20")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.20")
-}
-
-repositories {
-    maven {
-        url = uri("https://repo.plo.su")
-    }
-    mavenCentral()
-    mavenLocal()
 }
 
 tasks {

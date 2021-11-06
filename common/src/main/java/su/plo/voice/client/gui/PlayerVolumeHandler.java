@@ -25,7 +25,7 @@ public class PlayerVolumeHandler {
         if (action == 1) {
             if (client.player != null && VoiceClient.isConnected()) {
                 focusedPlayer = Utils.getPlayerBySight(client.player.level, client.player);
-                if (focusedPlayer != null && !VoiceClient.getServerConfig().getClients().contains(focusedPlayer.getUUID())) {
+                if (focusedPlayer != null && !VoiceClient.getNetwork().hasVoiceChat(focusedPlayer.getUUID())) {
                     focusedPlayer = null;
                 }
             }

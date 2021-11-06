@@ -28,5 +28,7 @@ rootProject.name = "PlasmoVoice"
 include(
     "common",
     "fabric",
-    "forge"
+//    "forge",
+    "api",
+    "spigot"
 )

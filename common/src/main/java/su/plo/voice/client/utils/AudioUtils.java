@@ -1,24 +1,17 @@
 package su.plo.voice.client.utils;
 
+import java.nio.ByteBuffer;
+
 public class AudioUtils {
     public static short[] bytesToShorts(byte[] bytes) {
         short[] shorts = new short[bytes.length / 2];
-        for (int i = 0; i < bytes.length; i += 2) {
-            shorts[i / 2] = bytesToShort(bytes[i], bytes[i + 1]);
-        }
-
+        ByteBuffer.wrap(bytes).asShortBuffer().get(shorts);
         return shorts;
     }
 
     public static byte[] shortsToBytes(short[] shorts) {
         byte[] bytes = new byte[shorts.length * 2];
-
-        for (int i = 0; i < bytes.length; i += 2) {
-            byte[] sample = shortToBytes(shorts[i / 2]);
-            bytes[i] = sample[0];
-            bytes[i + 1] = sample[1];
-        }
-
+        ByteBuffer.wrap(bytes).asShortBuffer().put(shorts);
         return bytes;
     }
 
@@ -28,6 +21,14 @@ public class AudioUtils {
             floats[i / 2] = ((float) AudioUtils.bytesToShort(bytes[i], bytes[i + 1])) / 0x8000;
         }
 
+        return floats;
+    }
+
+    public static float[] shortsToFloats(short[] shorts) {
+        float[] floats = new float[shorts.length];
+        for (int i = 0; i < shorts.length; i++) {
+            floats[i] = ((Short) shorts[i]).floatValue();
+        }
         return floats;
     }
 
@@ -41,6 +42,14 @@ public class AudioUtils {
         }
 
         return bytes;
+    }
+
+    public static short[] floatsToShorts(float[] floats) {
+        short[] shorts = new short[floats.length];
+        for (int i = 0; i < floats.length; i++) {
+            shorts[i] = ((Float) floats[i]).shortValue();
+        }
+        return shorts;
     }
 
     public static short bytesToShort(byte b1, byte b2) {
@@ -63,21 +72,21 @@ public class AudioUtils {
         return (float)Math.exp(-1.0f / (sampleRate * time));
     }
 
-    public static int getActivationOffset(byte[] samples, double activationLevel) {
-        int highestPos = -1;
-        for (int i = 0; i < samples.length; i += 100) {
-            double level = calculateAudioLevel(samples, i, Math.min(i + 100, samples.length));
-            if (level >= activationLevel) {
-                highestPos = i;
+
+    public static boolean hasHigherLevel(short[] samples, double targetLevel) {
+        for (int i = 0; i < samples.length; i += 50) {
+            double chunkLevel = calculateAudioLevel(samples, i, Math.min(i + 50, samples.length));
+            if (chunkLevel >= targetLevel) {
+                return true;
             }
         }
-        return highestPos;
+        return false;
     }
 
-    public static double getHighestAudioLevel(byte[] samples) {
+    public static double getHighestAudioLevel(short[] samples) {
         double highest = -127D;
-        for (int i = 0; i < samples.length; i += 100) {
-            double level = calculateAudioLevel(samples, i, Math.min(i + 100, samples.length));
+        for (int i = 0; i < samples.length; i += 50) {
+            double level = calculateAudioLevel(samples, i, Math.min(i + 50, samples.length));
             if (level > highest) {
                 highest = level;
             }
@@ -85,11 +94,21 @@ public class AudioUtils {
         return highest;
     }
 
-    public static double calculateAudioLevel(byte[] samples, int offset, int length) {
+    /**
+     * Calculates the audio level of a signal with specific <tt>samples</tt>.
+     * Source: https://github.com/jitsi/libjitsi/blob/master/src/org/jitsi/impl/neomedia/audiolevel/AudioLevelCalculator.java
+     *
+     * @param samples the samples of the signal to calculate the audio level of
+     * @param offset the offset in <tt>samples</tt> in which the samples start
+     * @param length the length in bytes of the signal in <tt>samples<tt>
+     * starting at <tt>offset</tt>
+     * @return the audio level of the specified signal
+     */
+    public static double calculateAudioLevel(short[] samples, int offset, int length) {
         double rms = 0D; // root mean square (RMS) amplitude
 
-        for (int i = offset; i < length; i += 2) {
-            double sample = (double) bytesToShort(samples[i], samples[i + 1]) / Short.MAX_VALUE;
+        for (; offset < length; offset++) {
+            double sample = (double) samples[offset] / Short.MAX_VALUE;
             rms += sample * sample;
         }
 
@@ -100,7 +119,15 @@ public class AudioUtils {
         double db;
 
         if (rms > 0D) {
-            db = Math.min(Math.max(20D * Math.log10(rms), -127D), 0D);
+            db = 20 * Math.log10(rms);
+            // XXX The audio level is expressed in -dBov.
+            db = -db;
+            // Ensure that the calculated audio level is within the range
+            // between MIN_AUDIO_LEVEL and MAX_AUDIO_LEVEL.
+            if (db > 127D)
+                db = 127D;
+            else if (db < 0D)
+                db = 0D;
         } else {
             db = -127D;
         }

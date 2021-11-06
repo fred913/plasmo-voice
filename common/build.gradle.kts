@@ -10,18 +10,18 @@ dependencies {
 
     modImplementation("net.fabricmc:fabric-loader:${fabricLoaderVersion}")
 
+    implementation(project(":api")) {
+        isTransitive = false
+    }
+
     // Lombok
     compileOnly("org.projectlombok:lombok:1.18.20")
     annotationProcessor("org.projectlombok:lombok:1.18.20")
 
-    testCompileOnly("org.projectlombok:lombok:1.18.20")
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.20")
+    implementation("com.google.code.findbugs:jsr305:3.0.2")
 
     // YAML for server config
     compileOnly("org.yaml:snakeyaml:1.29")
-
-    // Plasmo Voice protocol
-    compileOnly("su.plo.voice:common:1.0.0")
 
     // Opus
     compileOnly("su.plo.voice:opus:1.1.2")
@@ -34,14 +34,12 @@ architectury {
     common(true)
 }
 
-repositories {
-    maven {
-        url = uri("https://repo.plo.su")
-    }
-    mavenLocal()
+configurations {
+    create("dev")
 }
 
-val sourcesJar = tasks.create<Jar>("sourcesJar") {
-    archiveClassifier.set("sources")
-    from(sourceSets["main"].allSource)
+tasks {
+    artifacts {
+        add("dev", jar)
+    }
 }

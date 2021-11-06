@@ -2,6 +2,7 @@
     "schemaVersion": 1,
     "id": "plasmo_voice",
     "version": "${version}",
+    "serverVersion": "${server_version}",
     "name": "Plasmo Voice",
     "description": "A proximity voice chat mod with audio positioning and lots of features",
     "authors": [

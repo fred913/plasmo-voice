@@ -1,12 +1,12 @@
-package su.plo.voice.server.network;
+package su.plo.voice.server.mod.network;
 
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import su.plo.voice.common.packets.Packet;
-import su.plo.voice.common.packets.tcp.ClientConnectPacket;
-import su.plo.voice.common.packets.tcp.PacketTCP;
+import su.plo.voice.protocol.packets.Packet;
+import su.plo.voice.protocol.packets.tcp.ClientConnectPacket;
+import su.plo.voice.protocol.packets.tcp.PacketTCP;
 
 public class ServerNetworkHandlerForge extends ServerNetworkHandler {
     public void handle(ServerPlayer player, FriendlyByteBuf buf) {

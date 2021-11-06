@@ -4,11 +4,10 @@ import net.minecraft.client.Minecraft;
 import su.plo.voice.client.VoiceClient;
 import su.plo.voice.client.gui.VoiceNotAvailableScreen;
 import su.plo.voice.client.gui.VoiceSettingsScreen;
-import su.plo.voice.common.packets.Packet;
-import su.plo.voice.common.packets.udp.PacketUDP;
+import su.plo.voice.protocol.packets.Packet;
+import su.plo.voice.protocol.packets.udp.MessageUdp;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -22,7 +21,7 @@ public class SocketClientUDP extends Thread {
     private final DatagramSocket socket;
     public boolean authorized;
     private final SocketClientAuth auth;
-    private final SocketClientUDPQueue clientQueue;
+    private final SocketClientUDPListener clientQueue;
     public final SocketClientPing ping;
 
     public long keepAlive;
@@ -38,7 +37,7 @@ public class SocketClientUDP extends Thread {
         this.auth = new SocketClientAuth(this);
         this.auth.start();
 
-        this.clientQueue = new SocketClientUDPQueue(this);
+        this.clientQueue = new SocketClientUDPListener(this);
         this.clientQueue.start();
 
         ping = new SocketClientPing(this);
@@ -108,26 +107,33 @@ public class SocketClientUDP extends Thread {
         }
     }
 
-    public void send(Packet packet) throws IOException {
-        byte[] data = PacketUDP.write(packet);
-        socket.send(new DatagramPacket(data, data.length, addr, port));
+    public void send(Packet packet, long sequenceNumber) {
+        try {
+            byte[] data = MessageUdp.write(packet, null, sequenceNumber);
+            socket.send(new DatagramPacket(data, data.length, addr, port));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void run() {
         try {
             while (!this.socket.isClosed()) {
-                this.clientQueue.queue.add(PacketUDP.read(this.socket));
+                MessageUdp packet = MessageUdp.read(this.socket);
+                if (packet != null) {
+                    clientQueue.queue.offer(packet);
+                }
 
-                synchronized (this.clientQueue) {
-                    this.clientQueue.notify();
+                synchronized (clientQueue) {
+                    clientQueue.notify();
                 }
             }
         } catch (SocketException e) {
             if(!e.getMessage().equals("Socket closed")) {
                 e.printStackTrace();
             }
-        } catch (IOException | InstantiationException | InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

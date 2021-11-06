@@ -5,23 +5,19 @@ import lombok.Data;
 import lombok.Setter;
 import su.plo.voice.client.VoiceClient;
 import su.plo.voice.client.render.SphereRenderer;
-import su.plo.voice.client.socket.SocketClientUDPQueue;
-import su.plo.voice.client.sound.AbstractSoundQueue;
-import su.plo.voice.common.entities.MutedEntity;
-import su.plo.voice.common.packets.tcp.ConfigPacket;
+import su.plo.voice.client.socket.SocketClientUDPListener;
+import su.plo.voice.protocol.packets.tcp.ConfigS2CPacket;
+import su.plo.voice.protocol.packets.tcp.PermissionsS2CPacket;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Data
 public class ServerSettings {
     private String secret;
     private String ip;
     private int port;
-    @Setter(AccessLevel.PRIVATE)
-    private HashSet<UUID> clients = new HashSet<>();
-    @Setter(AccessLevel.PRIVATE)
-    private ConcurrentHashMap<UUID, MutedEntity> muted = new ConcurrentHashMap<>();
     @Setter(AccessLevel.PRIVATE)
     private List<Integer> distances = new ArrayList<>();
     private short distance;
@@ -32,17 +28,38 @@ public class ServerSettings {
     private short priorityDistance;
     private int fadeDivisor;
     private int priorityFadeDivisor;
-    private boolean priority;
-    private boolean voiceActivationDisabled;
 
-    public ServerSettings(String secret, String ip, int port, boolean hasPriority) {
+    private boolean canSpeak;
+    private boolean priority;
+    private boolean activation;
+    // todo impl
+    private boolean forceSoundOcclusion;
+    private int forceDistance;
+    private int forcePriorityDistance;
+
+    public ServerSettings(String secret, String ip, int port) {
         this.secret = secret;
         this.ip = ip;
         this.port = port;
-        this.priority = hasPriority;
     }
 
-    public void update(ConfigPacket config) {
+    public void update(PermissionsS2CPacket packet) {
+        if (packet.getSpeak() != null) {
+            this.canSpeak = packet.getSpeak();
+        }
+        if (packet.getPriority() != null) {
+            this.priority = packet.getPriority();
+        }
+        if (packet.getActivation() != null) {
+            this.activation = packet.getActivation();
+        }
+        if (packet.getForceSoundOcclusion() != null) {
+            this.forceSoundOcclusion = packet.getForceSoundOcclusion();
+        }
+    }
+
+    public void update(ConfigS2CPacket config) {
+        this.update((PermissionsS2CPacket) config);
         this.distances = config.getDistances();
         Collections.sort(this.distances);
         this.minDistance = this.distances.get(0).shortValue();
@@ -51,7 +68,6 @@ public class ServerSettings {
         this.maxPriorityDistance = this.maxPriorityDistance == 0 ? Short.MAX_VALUE : this.maxPriorityDistance;
         this.fadeDivisor = config.getFadeDivisor();
         this.priorityFadeDivisor = config.getPriorityFadeDivisor();
-        this.voiceActivationDisabled = config.isDisableVoiceActivation();
         this.defaultDistance = (short) config.getDefaultDistance();
 
         if(VoiceClient.getClientConfig().getServers().containsKey(ip)) {
@@ -87,11 +103,7 @@ public class ServerSettings {
 
         VoiceClient.recorder.updateSampleRate(config.getSampleRate());
 
-        SocketClientUDPQueue.talking.clear();
-        SocketClientUDPQueue.audioChannels
-                .values()
-                .forEach(AbstractSoundQueue::closeAndKill);
-        SocketClientUDPQueue.audioChannels.clear();
+        SocketClientUDPListener.closeAll();
 
         SphereRenderer.getInstance().setRadius(this.distance + 0.5F, false, false);
     }

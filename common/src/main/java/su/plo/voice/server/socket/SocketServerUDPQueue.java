@@ -1,10 +1,12 @@
 package su.plo.voice.server.socket;
 
-import net.minecraft.server.level.ServerPlayer;
-import su.plo.voice.common.packets.udp.*;
-import su.plo.voice.server.PlayerManager;
+import su.plo.voice.api.player.VoicePlayer;
+import su.plo.voice.protocol.packets.udp.AuthC2SPacket;
+import su.plo.voice.protocol.packets.udp.AuthS2CPacket;
+import su.plo.voice.protocol.packets.udp.MessageUdp;
+import su.plo.voice.protocol.packets.udp.PingS2CPacket;
+import su.plo.voice.protocol.sources.SourceInfo;
 import su.plo.voice.server.VoiceServer;
-import su.plo.voice.server.network.ServerNetworkHandler;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,89 +14,31 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class SocketServerUDPQueue extends Thread {
-    public LinkedBlockingQueue<PacketUDP> queue = new LinkedBlockingQueue<>();
+    public LinkedBlockingQueue<MessageUdp> queue = new LinkedBlockingQueue<>();
 
     public void run() {
         while (!this.isInterrupted()) {
             try {
                 this.keepAlive();
 
-                PacketUDP message = queue.poll(10, TimeUnit.MILLISECONDS);
-                if (message == null || message.getPacket() == null || System.currentTimeMillis() - message.getTimestamp() > message.getTTL()) {
+                MessageUdp message = queue.poll(10, TimeUnit.MILLISECONDS);
+                if (message == null || message.getPayload() == null || System.currentTimeMillis() - message.getTimestamp() > message.getTtl()) {
                     continue;
                 }
 
-                if (message.getPacket() instanceof AuthPacket packet) {
-                    AtomicReference<ServerPlayer> player = new AtomicReference<>();
-
-                    ServerNetworkHandler.playerToken.forEach((uuid, t) -> {
-                        if (t.toString().equals(packet.getToken())) {
-                            player.set(VoiceServer.getServer().getPlayerList().getPlayer(uuid));
-                        }
-                    });
-
-                    if (player.get() != null) {
-                        ServerNetworkHandler.playerToken.remove(player.get().getUUID());
-                        String type = VoiceServer.getNetwork().isVanillaPlayer(player.get()) ? "forge" : "fabric";
-                        SocketClientUDP sock = new SocketClientUDP(player.get().getUUID(), type, message.getAddress(), message.getPort());
-
-                        if (!SocketServerUDP.clients.containsKey(player.get().getUUID())) {
-                            SocketServerUDP.clients.put(player.get().getUUID(), sock);
-                        }
-
-                        SocketServerUDP.sendTo(PacketUDP.write(new AuthPacketAck()), sock);
-                    }
+                if (message.getPayload() instanceof AuthC2SPacket packet) {
+                    handleAuth(message, packet);
+                    continue;
                 }
 
                 SocketClientUDP client = SocketServerUDP.getSender(message);
-                if (client == null) { // not authorized
-                    continue;
-                }
-                ServerPlayer player = client.getPlayer();
-                if (player == null) {
+                if (client == null) {
                     continue;
                 }
 
-                if (message.getPacket() instanceof PingPacket) {
-                    client.setKeepAlive(System.currentTimeMillis());
-                    continue;
-                }
-
-                // server mute
-                if (VoiceServer.getPlayerManager().isMuted(player.getUUID())) {
-                    continue;
-                }
-
-                if (message.getPacket() instanceof VoiceClientPacket packet) {
-                    if (!VoiceServer.getPlayerManager().hasPermission(player.getUUID(), "voice.speak")) {
-                        continue;
-                    }
-
-                    if (packet.getDistance() > VoiceServer.getServerConfig().getMaxDistance()) {
-                        if (VoiceServer.getPlayerManager().hasPermission(player.getUUID(), "voice.priority") &&
-                                packet.getDistance() <= VoiceServer.getServerConfig().getMaxPriorityDistance()) {
-                            VoiceServerPacket serverPacket = new VoiceServerPacket(packet.getData(),
-                                    player.getUUID(),
-                                    packet.getSequenceNumber(),
-                                    packet.getDistance()
-                            );
-                            SocketServerUDP.sendToNearbyPlayers(serverPacket, player, packet.getDistance());
-                        }
-                    } else {
-                        VoiceServerPacket serverPacket = new VoiceServerPacket(packet.getData(),
-                                player.getUUID(),
-                                packet.getSequenceNumber(),
-                                packet.getDistance()
-                        );
-                        SocketServerUDP.sendToNearbyPlayers(serverPacket, player, packet.getDistance());
-                    }
-                } else if (message.getPacket() instanceof VoiceEndClientPacket packet) {
-                    VoiceEndServerPacket serverPacket = new VoiceEndServerPacket(player.getUUID());
-                    SocketServerUDP.sendToNearbyPlayers(serverPacket, player, packet.getDistance());
-                }
+                message.getPayload().handle(client);
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (InterruptedException ignored) {
@@ -105,26 +49,50 @@ public class SocketServerUDPQueue extends Thread {
 
     private void keepAlive() throws IOException {
         long timestamp = System.currentTimeMillis();
-        PingPacket keepAlive = new PingPacket();
-        List<UUID> connectionsToDrop = new ArrayList<>(SocketServerUDP.clients.size());
+        PingS2CPacket keepAlive = new PingS2CPacket();
+        List<SocketClientUDP> timedOut = new ArrayList<>(SocketServerUDP.clients.size());
         for (SocketClientUDP connection : SocketServerUDP.clients.values()) {
             if (timestamp - connection.getKeepAlive() >= 15000L) {
-                connectionsToDrop.add(connection.getPlayerUUID());
+                timedOut.add(connection);
             } else if (timestamp - connection.getSentKeepAlive() >= 1000L) {
                 connection.setSentKeepAlive(timestamp);
-                SocketServerUDP.sendTo(PacketUDP.write(keepAlive), connection);
+                SocketServerUDP.sendTo(MessageUdp.write(keepAlive, null, 0L), connection);
             }
         }
-        for (UUID uuid : connectionsToDrop) {
-            ServerPlayer player = PlayerManager.getByUUID(uuid);
-            ServerNetworkHandler.disconnectClient(uuid);
+        for (SocketClientUDP client : timedOut) {
+            VoicePlayer player = client.getPlayer();
+            client.close();
 
             if (VoiceServer.isLogsEnabled()) {
-                VoiceServer.LOGGER.info("{} UDP timed out", player.getGameProfile().getName());
-                VoiceServer.LOGGER.info("{} sent reconnect packet", player.getGameProfile().getName());
+                VoiceServer.LOGGER.info("{} UDP timed out", player.getName());
+                VoiceServer.LOGGER.info("{} sent reconnect packet", player.getName());
             }
 
-            ServerNetworkHandler.reconnectClient(player);
+            VoiceServer.getNetwork().reconnectClient(player);
+        }
+    }
+
+    public void handleAuth(MessageUdp message, AuthC2SPacket packet) {
+        UUID playerId = VoiceServer.getNetwork().findByToken(packet.getToken());
+
+        if (playerId != null) {
+            SourceInfo source = VoiceServer.getSources().registerPlayerSource(playerId);
+
+            VoicePlayer player = VoiceServer.getAPI().getPlayerManager().create(
+                    source.getId(),
+                    playerId,
+                    VoiceServer.getAPI().getPlayerManager().isVanillaPlayer(playerId)  ? "forge" : "fabric"
+            );
+
+            VoiceServer.getNetwork().updatePlayer(player);
+
+            SocketClientUDP sock = new SocketClientUDP(player, message.getAddress());
+
+            if (!SocketServerUDP.clients.containsKey(player.getUniqueId())) {
+                SocketServerUDP.clients.put(player.getUniqueId(), sock);
+            }
+
+            SocketServerUDP.sendTo(MessageUdp.write(new AuthS2CPacket(), null, 0L), sock);
         }
     }
 }

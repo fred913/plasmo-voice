@@ -66,7 +66,7 @@ public abstract class MixinPlayerEntry {
 
         if (!minecraft.player.getGameProfile().getId().equals(id) &&
                 !socialInteractionsManager.isBlocked(id) &&
-                VoiceClient.getServerConfig().getClients().contains(id)) {
+                VoiceClient.getNetwork().hasVoiceChat(id)) {
             this.volumeButton = new ImageButton(0, 0, 20, 20, 0, 72, 20, VoiceClient.ICONS, 256, 256, (buttonWidget) -> {
                 this.playerVolumeWidget.visible = true;
                 this.volumeButton.visible = false;

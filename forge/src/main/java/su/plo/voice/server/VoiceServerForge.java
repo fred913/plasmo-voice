@@ -9,8 +9,8 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fmlserverevents.FMLServerStartedEvent;
 import net.minecraftforge.fmlserverevents.FMLServerStoppingEvent;
-import su.plo.voice.server.commands.CommandManager;
-import su.plo.voice.server.network.ServerNetworkHandlerForge;
+import su.plo.voice.server.mod.commands.CommandManager;
+import su.plo.voice.server.mod.network.ServerNetworkHandlerForge;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;

@@ -6,17 +6,25 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.S2CPlayChannelEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import su.plo.voice.server.commands.CommandManager;
+import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
 import su.plo.voice.server.config.ServerConfigFabric;
-import su.plo.voice.server.network.ServerNetworkHandlerFabric;
+import su.plo.voice.server.mod.VoiceServerMod;
+import su.plo.voice.server.mod.commands.CommandManager;
+import su.plo.voice.server.mod.network.ServerNetworkHandlerFabric;
+import su.plo.voice.server.mod.network.ServerNetworkHandlerMod;
 
-public class VoiceServerFabric extends VoiceServer implements ModInitializer {
-    static {
-        network = new ServerNetworkHandlerFabric();
+public class VoiceServerFabric extends VoiceServerMod implements ModInitializer {
+    private int[] version = new int[3];
+
+    public VoiceServerFabric() {
+        super(new ServerNetworkHandlerFabric());
     }
 
     @Override
     public void onInitialize() {
+        loadVersion();
+
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             setServer(server);
             this.start();
@@ -27,17 +35,19 @@ public class VoiceServerFabric extends VoiceServer implements ModInitializer {
         });
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> this.close());
 
+        ServerNetworkHandlerMod modNetwork = (ServerNetworkHandlerMod) network;
+
         S2CPlayChannelEvents.REGISTER.register((handler, sender, server, channels) ->
-                network.handleRegisterChannels(channels, handler.player)
+                modNetwork.handleRegisterChannels(channels, handler.player)
         );
-        ServerPlayNetworking.registerGlobalReceiver(VoiceServer.PLASMO_VOICE, ((ServerNetworkHandlerFabric) network)::handle);
+        ServerPlayNetworking.registerGlobalReceiver(PLASMO_VOICE, ((ServerNetworkHandlerFabric) network)::handle);
 
         ServerPlayConnectionEvents.JOIN.register(((handler, sender, server) ->
-                network.handleJoin(handler.player))
+                modNetwork.handleJoin(handler.player))
         );
 
         ServerPlayConnectionEvents.DISCONNECT.register(((handler, server) ->
-                network.handleQuit(handler.player))
+                modNetwork.handleQuit(handler.player))
         );
 
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) ->
@@ -47,7 +57,6 @@ public class VoiceServerFabric extends VoiceServer implements ModInitializer {
 
     @Override
     protected void start() {
-        network.start();
         super.start();
     }
 
@@ -67,6 +76,22 @@ public class VoiceServerFabric extends VoiceServer implements ModInitializer {
             return;
         }
 
-        VoiceServer.setServerConfig(new ServerConfigFabric(getServerConfig(), config.getBoolean("client_mod_required"), clientModCheckTimeout));
+        serverConfig = new ServerConfigFabric(getServerConfig(), config.getBoolean("client_mod_required"), clientModCheckTimeout);
+    }
+
+    @Override
+    public int[] getVersion() {
+        return version;
+    }
+
+    private void loadVersion() {
+        ModContainer modContainer = FabricLoader.getInstance()
+                .getModContainer("plasmo_voice")
+                .orElse(null);
+        if (modContainer == null) {
+            return;
+        }
+
+        version = calculateVersion(modContainer.getMetadata().getVersion().getFriendlyString());
     }
 }

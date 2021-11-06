@@ -1,9 +1,7 @@
 package su.plo.voice.client.socket;
 
 import su.plo.voice.client.VoiceClient;
-import su.plo.voice.common.packets.udp.AuthPacket;
-
-import java.io.IOException;
+import su.plo.voice.protocol.packets.udp.AuthC2SPacket;
 
 public class SocketClientAuth extends Thread {
     private final SocketClientUDP socket;
@@ -16,12 +14,12 @@ public class SocketClientAuth extends Thread {
     public void run() {
         while(!socket.authorized && !socket.isClosed()) {
             try {
-                this.socket.send(new AuthPacket(VoiceClient.getServerConfig().getSecret()));
+                socket.send(new AuthC2SPacket(VoiceClient.getServerConfig().getSecret()), 0L);
 
                 Thread.sleep(2000);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException ignored) {}
+            } catch (InterruptedException ignored) {
+                break;
+            }
         }
     }
 }

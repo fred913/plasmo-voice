@@ -24,11 +24,20 @@ public class Limiter {
         process(audioFloats);
     }
 
+    public synchronized short[] limit(short[] audio) {
+        float[] audioFloats = AudioUtils.shortsToFloats(audio);
+
+        analyzeEnvelope(audioFloats);
+        process(audioFloats);
+
+        return AudioUtils.floatsToShorts(audioFloats);
+    }
+
     private synchronized void analyzeEnvelope(float[] samples) {
         this.envelopeBuf = new float[samples.length];
 
-        float attackGain = AudioUtils.gainCoefficient(Recorder.getSampleRate(), 0.001F / 1000F);
-        float releaseGain = AudioUtils.gainCoefficient(Recorder.getSampleRate(), 60F / 1000F);
+        float attackGain = AudioUtils.gainCoefficient(AudioCapture.getSampleRate(), 0.001F / 1000F);
+        float releaseGain = AudioUtils.gainCoefficient(AudioCapture.getSampleRate(), 60F / 1000F);
 
         float env = this.envelope;
         for (int i = 0; i < samples.length; i++) {

@@ -13,7 +13,7 @@ public class ServerConfigFabric extends ServerConfig {
     public ServerConfigFabric(ServerConfig config, boolean clientModRequired, int clientModCheckTimeout) {
         super(config.getIp(), config.getPort(), config.getProxyIp(), config.getProxyPort(), config.getSampleRate(),
                 new ArrayList<>(config.getDistances()), config.getDefaultDistance(), config.getMaxPriorityDistance(),
-                config.isDisableVoiceActivation(), config.getFadeDivisor(), config.getPriorityFadeDivisor());
+                config.getFadeDivisor(), config.getPriorityFadeDivisor());
         this.clientModRequired = clientModRequired;
         this.clientModCheckTimeout = clientModCheckTimeout;
     }

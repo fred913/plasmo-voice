@@ -1,151 +1,133 @@
 package su.plo.voice.client.network;
 
-import io.netty.buffer.Unpooled;
-import io.netty.channel.local.LocalAddress;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
+import com.google.common.io.ByteArrayDataInput;
+import com.google.common.io.ByteStreams;
 import net.minecraft.network.Connection;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.protocol.game.ServerboundCustomPayloadPacket;
 import su.plo.voice.client.VoiceClient;
-import su.plo.voice.client.config.ServerSettings;
-import su.plo.voice.client.gui.VoiceNotAvailableScreen;
-import su.plo.voice.client.socket.SocketClientUDP;
-import su.plo.voice.client.socket.SocketClientUDPQueue;
-import su.plo.voice.client.sound.AbstractSoundQueue;
-import su.plo.voice.common.entities.MutedEntity;
-import su.plo.voice.common.packets.Packet;
-import su.plo.voice.common.packets.tcp.*;
+import su.plo.voice.protocol.data.VoiceClientInfo;
+import su.plo.voice.protocol.packets.Packet;
+import su.plo.voice.protocol.packets.tcp.MessageTcp;
+import su.plo.voice.protocol.packets.tcp.SourceInfoC2SPacket;
+import su.plo.voice.protocol.sources.PlayerSourceInfo;
+import su.plo.voice.protocol.sources.SourceInfo;
 
 import java.io.IOException;
-import java.net.Inet4Address;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
-public abstract class ClientNetworkHandler {
-    private final Minecraft client = Minecraft.getInstance();
-
-    public void reply(Connection connection, Packet packet) throws IOException {
-        connection.send(
-                new ServerboundCustomPayloadPacket(
-                        VoiceClient.PLASMO_VOICE,
-                        new FriendlyByteBuf(Unpooled.wrappedBuffer(PacketTCP.write(packet)))
-                )
-        );
+public class ClientNetworkHandler extends ClientNetworkListener {
+    public ClientNetworkHandler(Connection connection) {
+        super(connection);
     }
 
-    public void handle(ServerConnectPacket packet, Connection connection) throws IOException {
-        VoiceClient.disconnect();
-        VoiceClient.socketUDP = null;
+    /**
+     * Check if player has voice chat
+     */
+    public boolean hasVoiceChat(UUID uuid) {
+        return clients.containsKey(uuid);
+    }
 
-        if (!(connection.getRemoteAddress() instanceof InetSocketAddress) &&
-                !(connection.getRemoteAddress() instanceof LocalAddress)) {
-            return;
+    /**
+     * Check if player muted
+     */
+    public boolean isPlayerMuted(UUID uuid) {
+        VoiceClientInfo client = clients.get(uuid);
+        return client != null && client.isMuted();
+    }
+
+    /**
+     * Check if player muted
+     */
+    public boolean isPlayerMuted(int id) {
+        VoiceClientInfo client = null;
+        try {
+            client = VoiceClient.getNetwork().getClientById(id);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        String ip = packet.getIp();
-        String serverIp = "127.0.0.1";
+        return client == null || client.isMuted();
+    }
 
-        if (ip.equals("0.0.0.0")) {
-            if (connection.getRemoteAddress() instanceof InetSocketAddress) {
-                InetSocketAddress addr = (InetSocketAddress) connection.getRemoteAddress();
-                Inet4Address in4addr = (Inet4Address) addr.getAddress();
-                String[] ipSplit = in4addr.toString().split("/");
+    /**
+     * Check if source is talking
+     */
+    public Boolean getTalking(int sourceId) {
+        return talking.get(sourceId);
+    }
 
-                serverIp = ipSplit[0];
-                if (ipSplit.length > 1) {
-                    serverIp = ipSplit[1];
-                }
+    /**
+     * Check if source is talking
+     */
+    public Boolean getTalking(UUID uuid) {
+        VoiceClientInfo client = clients.get(uuid);
+        if (client != null) {
+            return talking.get(client.getId());
+        }
+
+        return null;
+    }
+
+    /**
+     * Get voice client info
+     *
+     * @param id source id
+     * @return null or VoiceClientInfo
+     */
+    public VoiceClientInfo getClientById(int id) throws IOException {
+        VoiceClientInfo client = clientsById.get(id);
+        if (client == null) {
+            PlayerSourceInfo sourceInfo = (PlayerSourceInfo) getSourceInfo(id);
+            if (sourceInfo == null) {
+                return null;
             }
 
-            ip = serverIp;
+            client = sourceInfo.getClient();
+            clients.put(client.getUuid(), client);
+            clientsById.put(client.getId(), client);
         }
 
-        VoiceClient.LOGGER.info("Connecting to " + (client.getCurrentServer() == null ? "localhost" : client.getCurrentServer().ip));
-
-        VoiceClient.setServerConfig(new ServerSettings(packet.getToken(), ip,
-                packet.getPort(), packet.hasPriority()));
-
-        this.reply(connection, new ClientConnectPacket(packet.getToken(), VoiceClient.PROTOCOL_VERSION));
+        return client;
     }
 
-    public void handle(ConfigPacket packet) throws IOException {
-        if (VoiceClient.getServerConfig() != null) {
-            VoiceClient.getServerConfig().update(packet);
-
-            if (!VoiceClient.isConnected()) {
-                VoiceClient.socketUDP = new SocketClientUDP();
-                VoiceClient.socketUDP.start();
-
-                if (client.screen instanceof VoiceNotAvailableScreen screen) {
-                    screen.setConnecting();
-                }
-            }
+    /**
+     * Get source info
+     *
+     * @return null or VoiceClientInfo
+     */
+    public SourceInfo getSourceInfo(int sourceId) throws IOException {
+        if (sourcesById.containsKey(sourceId)) {
+            return sourcesById.get(sourceId);
         }
-    }
 
-    public void handle(ClientMutedPacket packet) {
-        if (VoiceClient.isConnected()) {
-            VoiceClient.getServerConfig().getMuted().put(packet.getClient(), new MutedEntity(packet.getClient(), packet.getTo()));
-            AbstractSoundQueue queue = SocketClientUDPQueue.audioChannels.get(packet.getClient());
-            if (queue != null) {
-                queue.closeAndKill();
-                SocketClientUDPQueue.audioChannels.remove(packet.getClient());
-            }
+        CompletableFuture<SourceInfo> sourceInfo;
+        if (sourceRequests.containsKey(sourceId)) {
+            sourceInfo = sourceRequests.get(sourceId);
+        } else {
+            sourceInfo = new CompletableFuture<>();
+            sourceRequests.put(sourceId, sourceInfo);
 
-            VoiceClient.LOGGER.info(packet.getClient().toString() + " muted");
+            sendToServer(new SourceInfoC2SPacket(sourceId));
         }
-    }
 
-    public void handle(ClientUnmutedPacket packet) {
-        if (VoiceClient.isConnected()) {
-            VoiceClient.getServerConfig().getMuted().remove(packet.getClient());
-
-            VoiceClient.LOGGER.info(packet.getClient().toString() + " unmuted");
+        try {
+            return sourceInfo.get(1000L, TimeUnit.MILLISECONDS);
+        } catch (Exception ignored) {
         }
+
+        return null;
     }
 
-    public void handle(ClientsListPacket packet) {
-        if (VoiceClient.getServerConfig() != null) { // check only config, because it can be sent before udp is connected
-            VoiceClient.getServerConfig().getMuted().clear();
-            VoiceClient.getServerConfig().getClients().clear();
+    public void handle(FriendlyByteBuf buf) {
+        byte[] data = new byte[buf.readableBytes()];
+        buf.duplicate().readBytes(data);
+        ByteArrayDataInput in = ByteStreams.newDataInput(data);
 
-            List<String> mutedList = new ArrayList<>();
-
-            for (MutedEntity muted : packet.getMuted()) {
-                mutedList.add(muted.uuid.toString());
-                VoiceClient.getServerConfig().getMuted().put(muted.uuid, muted);
-            }
-            VoiceClient.getServerConfig().getClients().addAll(packet.getClients());
-
-            VoiceClient.LOGGER.info("Clients: " + packet.getClients().toString());
-            VoiceClient.LOGGER.info("Muted clients: " + mutedList);
-        }
-    }
-
-    public void handle(ClientConnectedPacket packet) {
-        if (VoiceClient.isConnected()) {
-            if (packet.getMuted() != null) {
-                MutedEntity muted = packet.getMuted();
-                VoiceClient.getServerConfig().getMuted().put(muted.uuid, muted);
-            }
-
-            VoiceClient.getServerConfig().getClients().add(packet.getClient());
-        }
-    }
-
-    public void handle(ClientDisconnectedPacket packet) {
-        if (VoiceClient.isConnected()) {
-            VoiceClient.getServerConfig().getClients().remove(packet.getClient());
-            VoiceClient.getServerConfig().getMuted().remove(packet.getClient());
-
-            final LocalPlayer player = Minecraft.getInstance().player;
-            if (player != null) {
-                if (packet.getClient().equals(player.getUUID())) {
-                    VoiceClient.disconnect();
-                }
-            }
+        Packet pkt = MessageTcp.read(in);
+        if (pkt != null) {
+            pkt.handle(this);
         }
     }
 }

@@ -12,10 +12,10 @@ import su.plo.voice.client.config.ClientConfig;
 import su.plo.voice.client.config.ServerSettings;
 import su.plo.voice.client.gui.PlayerVolumeHandler;
 import su.plo.voice.client.gui.VoiceSettingsScreen;
+import su.plo.voice.client.network.ClientNetworkHandler;
 import su.plo.voice.client.socket.SocketClientUDP;
-import su.plo.voice.client.socket.SocketClientUDPQueue;
-import su.plo.voice.client.sound.AbstractSoundQueue;
-import su.plo.voice.client.sound.Recorder;
+import su.plo.voice.client.socket.SocketClientUDPListener;
+import su.plo.voice.client.sound.AudioCapture;
 import su.plo.voice.client.sound.openal.CustomSoundEngine;
 
 import java.util.UUID;
@@ -25,8 +25,7 @@ public abstract class VoiceClient {
     private static VoiceClient instance;
 
     public static final ResourceLocation PLASMO_VOICE = new ResourceLocation("plasmo:voice");
-    public static final String PROTOCOL_VERSION = "1.0.0";
-    public static final Logger LOGGER = LogManager.getLogger("Plasmo Voice");
+    public static final Logger LOGGER = LogManager.getLogger(VoiceClient.class);
     public static final UUID NIL_UUID = new UUID(0, 0);
 
     @Getter
@@ -39,9 +38,11 @@ public abstract class VoiceClient {
 
     // ???
     public static SocketClientUDP socketUDP;
-    public static Recorder recorder;
+    public static AudioCapture recorder;
     @Getter
     public static final CustomSoundEngine soundEngine = new CustomSoundEngine();
+
+    protected ClientNetworkHandler network;
 
     @Setter
     @Getter
@@ -61,8 +62,11 @@ public abstract class VoiceClient {
 
         Minecraft minecraft = Minecraft.getInstance();
         clientConfig = ClientConfig.read();
+
+        LOGGER.debug("Debug mode activated");
+
         keyBindings = clientConfig.keyBindings;
-        recorder = new Recorder();
+        recorder = new AudioCapture();
 
         keyBindings.action.get().setOnPress(PlayerVolumeHandler::onButton);
         keyBindings.muteMicrophone.get().setOnPress(action -> {
@@ -131,12 +135,11 @@ public abstract class VoiceClient {
             socketUDP.close();
         }
 
-        recorder.setRunning(false);
+        VoiceClient.getInstance().network = null;
+        recorder.interrupt();
         serverConfig = null;
 
-        SocketClientUDPQueue.talking.clear();
-        SocketClientUDPQueue.audioChannels.values().forEach(AbstractSoundQueue::closeAndKill);
-        SocketClientUDPQueue.audioChannels.clear();
+        SocketClientUDPListener.closeAll();
     }
 
     public static boolean isMicrophoneLoopback() {
@@ -152,7 +155,11 @@ public abstract class VoiceClient {
             return false;
         }
 
-        return socketUDP.authorized && !socketUDP.ping.timedOut;
+        return socketUDP.authorized && !socketUDP.isClosed() && !socketUDP.ping.timedOut;
+    }
+
+    public static ClientNetworkHandler getNetwork() {
+        return instance.network;
     }
 
     public abstract String getVersion();
