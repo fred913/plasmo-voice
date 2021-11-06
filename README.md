@@ -11,10 +11,10 @@
 - [ ] API
   - [ ] Ability to create sources and send audio packets with API
 - [ ] Optional ProtocolLib for improved check of mod installation
-- [ ] Dynamic premission updates 
+- [ ] Dynamic permission updates 
 ### Maybe:
 - [ ] Use netty for UDP connection
 - [ ] NetEQ (audio jitter buffer and packet loss concealer)
 - [ ] Advanced API that will allow to create server-side only addons with custom GUI, hotkeys, and config options. Code name "Reactor"
   - [ ] Handheld radio addon
-  - [ ] Music player adddon
+  - [ ] Music player addon
