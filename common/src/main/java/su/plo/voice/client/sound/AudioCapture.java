@@ -304,9 +304,7 @@ public class AudioCapture implements Runnable {
         }
 
         VoiceClient.socketUDP.send(new AudioPlayerC2SPacket(
-                VoiceClient.isSpeakingPriority()
-                        ? VoiceClient.getServerConfig().getPriorityDistance()
-                        : VoiceClient.getServerConfig().getDistance(),
+                getDistance(),
                 encoder.process(samples)
         ), sequenceNumber++);
     }
@@ -320,10 +318,16 @@ public class AudioCapture implements Runnable {
         encoder.reset();
 
         try {
-            VoiceClient.getNetwork().sendToServer(new AudioEndPlayerC2SPacket());
+            VoiceClient.getNetwork().sendToServer(new AudioEndPlayerC2SPacket(getDistance(), sequenceNumber++));
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private short getDistance() {
+        return VoiceClient.isSpeakingPriority()
+                ? VoiceClient.getServerConfig().getPriorityDistance()
+                : VoiceClient.getServerConfig().getDistance();
     }
 
     /**

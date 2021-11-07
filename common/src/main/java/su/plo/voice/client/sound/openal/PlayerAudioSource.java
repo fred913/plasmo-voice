@@ -2,17 +2,17 @@ package su.plo.voice.client.sound.openal;
 
 import net.minecraft.world.entity.player.Player;
 import su.plo.voice.client.VoiceClient;
-import su.plo.voice.client.sound.AbstractSoundQueue;
+import su.plo.voice.client.sound.AbstractAudioSource;
 import su.plo.voice.protocol.data.VoiceClientInfo;
 import su.plo.voice.protocol.packets.udp.AudioPlayerS2CPacket;
 import su.plo.voice.protocol.packets.udp.AudioRawS2CPacket;
 
 import java.util.Random;
 
-public class OpenALPlayerQueue extends AbstractSoundQueue {
+public class PlayerAudioSource extends AbstractAudioSource {
     private final VoiceClientInfo client;
 
-    public OpenALPlayerQueue(int sourceId, VoiceClientInfo client) {
+    public PlayerAudioSource(int sourceId, VoiceClientInfo client) {
         super(sourceId);
         this.client = client;
         this.start();

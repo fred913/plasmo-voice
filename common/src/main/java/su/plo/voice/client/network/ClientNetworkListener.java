@@ -13,7 +13,7 @@ import su.plo.voice.client.config.ServerSettings;
 import su.plo.voice.client.gui.VoiceNotAvailableScreen;
 import su.plo.voice.client.socket.SocketClientUDP;
 import su.plo.voice.client.socket.SocketClientUDPListener;
-import su.plo.voice.client.sound.AbstractSoundQueue;
+import su.plo.voice.client.sound.AbstractAudioSource;
 import su.plo.voice.protocol.data.VoiceClientInfo;
 import su.plo.voice.protocol.packets.Packet;
 import su.plo.voice.protocol.packets.tcp.*;
@@ -170,10 +170,10 @@ public class ClientNetworkListener implements ClientTcpPacketListener {
             VoiceClientInfo client = clients.get(packet.getClient());
             client.setMuted(true);
 
-            AbstractSoundQueue queue = SocketClientUDPListener.audioChannels.get(client.getId());
+            AbstractAudioSource queue = SocketClientUDPListener.sources.get(client.getId());
             if (queue != null) {
                 queue.close();
-                SocketClientUDPListener.audioChannels.remove(client.getId());
+                SocketClientUDPListener.sources.remove(client.getId());
                 talking.remove(client.getId());
             }
 
@@ -211,9 +211,9 @@ public class ClientNetworkListener implements ClientTcpPacketListener {
     public void handle(AudioEndSourceS2CPacket packet) {
         talking.remove(packet.getSourceId());
 
-        AbstractSoundQueue ch = SocketClientUDPListener.audioChannels.get(packet.getSourceId());
+        AbstractAudioSource ch = SocketClientUDPListener.sources.get(packet.getSourceId());
         if (ch != null) {
-            ch.end();
+            ch.end(packet.getSequenceNumber());
         }
     }
 

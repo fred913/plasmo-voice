@@ -1,3 +1,11 @@
+/*
+ * This file is licensed under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ * Because it contains modified code from:
+ * https://github.com/RestComm/media-core/blob/master/scheduler/src/main/java/org/restcomm/media/core/scheduler/WallClock.java
+ */
+
 package su.plo.voice.client.sound.clock;
 
 import lombok.Getter;

@@ -5,8 +5,8 @@ import net.minecraft.client.Minecraft;
 import su.plo.voice.client.VoiceClient;
 import su.plo.voice.client.gui.VoiceNotAvailableScreen;
 import su.plo.voice.client.gui.VoiceSettingsScreen;
-import su.plo.voice.client.sound.AbstractSoundQueue;
-import su.plo.voice.client.sound.openal.OpenALPlayerQueue;
+import su.plo.voice.client.sound.AbstractAudioSource;
+import su.plo.voice.client.sound.openal.PlayerAudioSource;
 import su.plo.voice.protocol.data.VoiceClientInfo;
 import su.plo.voice.protocol.packets.udp.*;
 
@@ -19,22 +19,22 @@ public class SocketClientUDPListener extends Thread implements ClientUdpPacketLi
     private static final Minecraft client = Minecraft.getInstance();
     private final SocketClientUDP socket;
     public ConcurrentLinkedQueue<MessageUdp> queue = new ConcurrentLinkedQueue<>();
-    public static final Map<Integer, AbstractSoundQueue> audioChannels = new HashMap<>();
+    public static final Map<Integer, AbstractAudioSource> sources = new HashMap<>();
 
     public SocketClientUDPListener(SocketClientUDP socket) {
         this.socket = socket;
     }
 
     public static void close(int sourceId) {
-        audioChannels.remove(sourceId);
+        sources.remove(sourceId);
         VoiceClient.getNetwork().getTalking().remove(sourceId);
     }
 
     public static void closeAll() {
         // kill all queues to prevent possible problems
-        audioChannels.values()
-                .forEach(AbstractSoundQueue::close);
-        audioChannels.clear();
+        sources.values()
+                .forEach(AbstractAudioSource::close);
+        sources.clear();
         if (VoiceClient.getNetwork() != null) {
             VoiceClient.getNetwork().getTalking().clear();
         }
@@ -43,19 +43,19 @@ public class SocketClientUDPListener extends Thread implements ClientUdpPacketLi
     private void queuePacket(MessageUdp message) {
         AudioDirectS2CPacket packet = (AudioDirectS2CPacket) message.getPayload();
 
-        AbstractSoundQueue ch = audioChannels.get(packet.getSourceId());
+        AbstractAudioSource ch = sources.get(packet.getSourceId());
         if (ch == null) {
             if (packet instanceof AudioPlayerS2CPacket) {
                 try {
                     VoiceClientInfo client = VoiceClient.getNetwork().getClientById(packet.getSourceId());
-                    ch = new OpenALPlayerQueue(packet.getSourceId(), client);
+                    ch = new PlayerAudioSource(packet.getSourceId(), client);
                     ch.write(message);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
 
-            audioChannels.put(packet.getSourceId(), ch);
+            sources.put(packet.getSourceId(), ch);
         } else {
             ch.write(message);
         }
@@ -90,7 +90,6 @@ public class SocketClientUDPListener extends Thread implements ClientUdpPacketLi
         if (VoiceClient.getClientConfig().speakerMuted.get()) {
             return;
         }
-
 
         if (VoiceClient.getNetwork().isPlayerMuted(packet.getSourceId())) {
             return;

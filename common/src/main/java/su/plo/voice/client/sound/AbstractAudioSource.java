@@ -15,7 +15,7 @@ import su.plo.voice.client.sound.opus.Decoder;
 import su.plo.voice.protocol.packets.udp.AudioRawS2CPacket;
 import su.plo.voice.protocol.packets.udp.MessageUdp;
 
-public abstract class AbstractSoundQueue extends Thread {
+public abstract class AbstractAudioSource extends Thread {
     protected final Minecraft minecraft = Minecraft.getInstance();
 
     protected final FixedJitterBuffer buffer;
@@ -30,15 +30,16 @@ public abstract class AbstractSoundQueue extends Thread {
     protected CustomSource source;
     protected long lastPacketTime;
     protected long sequenceNumber;
+    protected long endSequnceNumber;
 
     protected Decoder decoder;
     protected double lastOcclusion = -1;
 
     protected final Compressor compressor = new Compressor();
 
-    public AbstractSoundQueue(int sourceId) {
+    public AbstractAudioSource(int sourceId) {
         this.sourceId = sourceId;
-        this.lastPacketTime = System.currentTimeMillis() - 300L;
+//        this.lastPacketTime = System.currentTimeMillis() - 300L;
         this.sequenceNumber = -1L;
         this.decoder = new Decoder();
 
@@ -59,6 +60,7 @@ public abstract class AbstractSoundQueue extends Thread {
             }
         }
 
+        SocketClientUDPListener.sources.remove(sourceId);
         if(source != null) {
             source.close();
         }
@@ -92,13 +94,19 @@ public abstract class AbstractSoundQueue extends Thread {
 
         MessageUdp pkt = buffer.read();
         if (pkt == null) {
+            if (endSequnceNumber > 0L &&
+                    ((sequenceNumber + 1 == endSequnceNumber) ||
+                            (lastPacketTime > 0L && System.currentTimeMillis() - lastPacketTime > 1000L))) {
+                reset();
+            }
+
             sleep(10L);
             return;
         }
 
         AudioRawS2CPacket packet = (AudioRawS2CPacket) pkt.getPayload();
 
-        lastPacketTime = packet.getMessage().getTimestamp();
+        lastPacketTime = packet.getMessage().getTimestamp() / 1000000L;
         if (!preProcess(packet)) {
             return;
         }
@@ -170,15 +178,20 @@ public abstract class AbstractSoundQueue extends Thread {
         this.sequenceNumber = packet.getMessage().getSequenceNumber();
     }
 
-    public void end() {
+    private void reset() {
         decoder.reset();
-        buffer.restart();
+        buffer.reset();
         sequenceNumber = -1L;
+        endSequnceNumber = -1L;
         lastOcclusion = -1;
     }
 
+    public void end(long sequenceNumber) {
+        this.endSequnceNumber = sequenceNumber;
+    }
+
     /**
-     * Пересчитывает коэфицент затухания
+     * Пересчитывает коэффициент затухания
      */
     public double calculateOcclusion(Player localPlayer, Vec3 position) {
         double occlusion = Occlusion.getOccludedPercent(localPlayer.level, localPlayer, position);
@@ -199,7 +212,7 @@ public abstract class AbstractSoundQueue extends Thread {
     }
 
     public boolean isDead() {
-        return System.currentTimeMillis() - lastPacketTime > 30_000L;
+        return lastPacketTime > 0L && System.currentTimeMillis() - lastPacketTime > 30_000L;
     }
 
     public void close() {
@@ -213,6 +226,10 @@ public abstract class AbstractSoundQueue extends Thread {
      * @param message
      */
     public void write(MessageUdp message) {
+        if (isDead()) {
+            throw new IllegalStateException("Channel is dead");
+        }
+
         if (lastPacketTime > 0) {
             wallClock.tick((message.getTimestamp() - lastPacketTime) * 1000000L);
         }

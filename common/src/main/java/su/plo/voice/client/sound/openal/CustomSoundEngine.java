@@ -13,7 +13,7 @@ import org.lwjgl.openal.*;
 import su.plo.voice.client.VoiceClient;
 import su.plo.voice.client.gui.VoiceSettingsScreen;
 import su.plo.voice.client.socket.SocketClientUDPListener;
-import su.plo.voice.client.sound.AbstractSoundQueue;
+import su.plo.voice.client.sound.AbstractAudioSource;
 import su.plo.voice.client.sound.AudioCapture;
 import su.plo.voice.client.sound.capture.JavaxCaptureDevice;
 
@@ -52,10 +52,10 @@ public class CustomSoundEngine {
     }
 
     public void restart() {
-        SocketClientUDPListener.audioChannels
+        SocketClientUDPListener.sources
                 .values()
-                .forEach(AbstractSoundQueue::close);
-        SocketClientUDPListener.audioChannels.clear();
+                .forEach(AbstractAudioSource::close);
+        SocketClientUDPListener.sources.clear();
 
         this.close();
         this.init();

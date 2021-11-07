@@ -200,7 +200,7 @@ public class FixedJitterBuffer {
      *
      * @param packet the packet to accept
      */
-    public synchronized void write(MessageUdp packet) {
+    public void write(MessageUdp packet) {
         boolean locked = false;
         try {
             locked = this.lock.tryLock() || this.lock.tryLock(5, TimeUnit.MILLISECONDS);
