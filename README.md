@@ -12,6 +12,7 @@
   - [ ] Ability to create sources and send audio packets with API
 - [ ] Optional ProtocolLib for improved check of mod installation
 - [ ] Dynamic permission updates 
+- [ ] Move common mixins to "common" project
 ### Maybe:
 - [ ] Use netty for UDP connection
 - [ ] NetEQ (audio jitter buffer and packet loss concealer)
