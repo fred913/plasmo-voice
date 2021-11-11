@@ -6,6 +6,7 @@
 - [ ] New types of sound sources
   - [X] Player source
   - [ ] Static source
+  - [ ] Entity source
   - [ ] Direct source
 - [ ] Debug network stats
 - [ ] API
