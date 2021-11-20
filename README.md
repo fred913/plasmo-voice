@@ -7,7 +7,8 @@
   - [X] Player source
   - [X] Static source
   - [X] Entity source
-  - [X] Direct source
+  - [X] Entity source
+  - [ ] Direct source
 - [ ] Debug network stats
 - [ ] API
   - [X] Ability to create sources and send audio packets with API
