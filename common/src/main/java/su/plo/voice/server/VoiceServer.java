@@ -6,6 +6,8 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import su.plo.voice.api.ConfigMessages;
 import su.plo.voice.api.PlasmoVoiceAPI;
+import su.plo.voice.api.PlasmoVoiceProvider;
+import su.plo.voice.api.entity.EntityManager;
 import su.plo.voice.api.player.PlayerManager;
 import su.plo.voice.server.config.Configuration;
 import su.plo.voice.server.config.ConfigurationProvider;
@@ -26,8 +28,8 @@ public abstract class VoiceServer implements ConfigMessages {
 
     public static final Logger LOGGER = LogManager.getLogger("Plasmo Voice");
 
-    protected  final SourceManager sources = new SourceManager();
-    protected final PlayerManager playerManager;
+    protected  PlayerManager playerManager;
+    protected  EntityManager entityManager;
     protected final ServerNetworkHandler network;
 
     private SocketServerUDP udpServer;
@@ -41,8 +43,7 @@ public abstract class VoiceServer implements ConfigMessages {
     @Getter
     protected static PlasmoVoiceAPI API;
 
-    protected VoiceServer(PlayerManager playerManager, ServerNetworkHandler network) {
-        this.playerManager = playerManager;
+    protected VoiceServer(ServerNetworkHandler network) {
         this.network = network;
     }
 
@@ -52,6 +53,10 @@ public abstract class VoiceServer implements ConfigMessages {
         updateConfig();
         loadData();
 
+        API = new VoiceServerAPIImpl(playerManager, entityManager);
+        PlasmoVoiceProvider.setAPI(API);
+        System.out.println(PlasmoVoiceProvider.getAPI());
+
         udpServer = new SocketServerUDP(serverConfig.getIp(), serverConfig.getPort());
         udpServer.start();
     }
@@ -60,6 +65,9 @@ public abstract class VoiceServer implements ConfigMessages {
         if (udpServer != null) {
             udpServer.close();
         }
+
+        ((SourceManagerImpl) API.getSourceManager()).close();
+        PlasmoVoiceProvider.setAPI(null);
 
         saveData(true);
     }
@@ -186,10 +194,6 @@ public abstract class VoiceServer implements ConfigMessages {
 
     public static ServerNetworkHandler getNetwork() {
         return instance.network;
-    }
-
-    public static SourceManager getSources() {
-        return instance.sources;
     }
 
     public static int[] calculateVersion(String s) {

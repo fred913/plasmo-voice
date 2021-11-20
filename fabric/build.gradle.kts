@@ -5,6 +5,9 @@ import com.matthewprenger.cursegradle.CurseRelation
 import com.matthewprenger.cursegradle.Options
 import net.fabricmc.loom.task.RemapJarTask
 
+val mavenUser: String by rootProject
+val mavenPassword: String by rootProject
+
 val minecraftVersion: String by rootProject
 val fabricLoaderVersion: String by rootProject
 val fabricVersion: String by rootProject
@@ -40,12 +43,11 @@ dependencies {
     implementation(project(":api")) {
         isTransitive = false
     }
-
     "shadowCommon"(project(":api")) {
         isTransitive = false
     }
 
-    implementation(project(":common", "dev")) {
+    compileOnly(project(":common", "dev")) {
         isTransitive = false
     }
     project.configurations.getByName("developmentFabric")(project(":common", "dev")) {
@@ -126,6 +128,23 @@ tasks {
 }
 
 val remapJar = tasks.getByName<RemapJarTask>("remapJar")
+
+publishing {
+    repositories {
+        maven {
+            credentials {
+                username = mavenUser
+                password = mavenPassword
+            }
+            url = uri("https://repo.plo.su/public/")
+        }
+    }
+    publications {
+        register("fabric", MavenPublication::class) {
+            artifact(remapJar)
+        }
+    }
+}
 
 curseforge {
     apiKey = if (file("${rootDir}/curseforge_key.txt").exists()) {

@@ -1,7 +1,7 @@
 package su.plo.voice.client.sound;
 
-import su.plo.voice.client.utils.AudioUtils;
 import su.plo.voice.client.utils.CircularFloatBuffer;
+import su.plo.voice.utils.AudioUtils;
 
 // https://stackoverflow.com/questions/36355992/how-to-increase-volume-amplitude-on-raw-audio-bytes
 // with some improvements

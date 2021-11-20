@@ -26,9 +26,11 @@ pluginManagement {
 rootProject.name = "PlasmoVoice"
 
 include(
-    "common",
-    "fabric",
-//    "forge",
-    "api",
-    "spigot"
+        "common",
+        "fabric",
+    //    "forge",
+        "api",
+        "spigot",
+        "api-examples",
+        "api-examples:fabric"
 )

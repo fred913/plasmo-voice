@@ -112,6 +112,7 @@ public class ClientNetworkListener implements ClientTcpPacketListener {
 
         if (!(info instanceof PlayerSourceInfo)) {
             sourcesById.put(info.getId(), info);
+            System.out.println(sourcesById.get(info.getId()));
         }
     }
     /* Source info response */
@@ -209,8 +210,6 @@ public class ClientNetworkListener implements ClientTcpPacketListener {
     /* Audio stats */
     @Override
     public void handle(AudioEndSourceS2CPacket packet) {
-        talking.remove(packet.getSourceId());
-
         AbstractAudioSource ch = SocketClientUDPListener.sources.get(packet.getSourceId());
         if (ch != null) {
             ch.end(packet.getSequenceNumber());

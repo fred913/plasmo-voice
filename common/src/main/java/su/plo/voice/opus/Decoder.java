@@ -1,4 +1,4 @@
-package su.plo.voice.client.sound.opus;
+package su.plo.voice.opus;
 
 import com.sun.jna.ptr.PointerByReference;
 import su.plo.voice.client.VoiceClient;

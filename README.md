@@ -3,13 +3,14 @@
 - [ ] AES encryption (with RSA handshake for the offline mode)
 - [ ] [#85](https://github.com/plasmoapp/plasmo-voice/issues/85)
 - [ ] [#73](https://github.com/plasmoapp/plasmo-voice/issues/73)
-- [ ] New types of sound sources
+- [X] New types of sound sources
   - [X] Player source
-  - [ ] Static source
-  - [ ] Direct source
+  - [X] Static source
+  - [X] Entity source
+  - [X] Direct source
 - [ ] Debug network stats
 - [ ] API
-  - [ ] Ability to create sources and send audio packets with API
+  - [X] Ability to create sources and send audio packets with API
 - [ ] Optional ProtocolLib for improved check of mod installation
 - [ ] Dynamic permission updates 
 - [ ] Move common mixins to "common" project

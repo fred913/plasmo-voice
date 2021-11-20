@@ -9,10 +9,13 @@ import su.plo.voice.protocol.data.VoiceClientInfo;
 import su.plo.voice.protocol.packets.Packet;
 import su.plo.voice.protocol.packets.tcp.MessageTcp;
 import su.plo.voice.protocol.packets.tcp.SourceInfoC2SPacket;
+import su.plo.voice.protocol.sources.EntitySourceInfo;
 import su.plo.voice.protocol.sources.PlayerSourceInfo;
 import su.plo.voice.protocol.sources.SourceInfo;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -52,16 +55,56 @@ public class ClientNetworkHandler extends ClientNetworkListener {
     }
 
     /**
+     * Returns all talking sources except players
+     */
+    public Map<SourceInfo, Boolean> getTalkingSources() {
+        Map<SourceInfo, Boolean> sources = new HashMap<>();
+        for (Map.Entry<Integer, Boolean> entry : talking.entrySet()) {
+            int sourceId = entry.getKey().intValue();
+            if (sourcesById.containsKey(sourceId)) {
+                sources.put(sourcesById.get(sourceId), entry.getValue());
+            }
+        }
+
+        return sources;
+    }
+
+    /**
      * Check if source is talking
      */
     public Boolean getTalking(int sourceId) {
         return talking.get(sourceId);
     }
 
+    public void setTalking(int sourceId, Boolean value) {
+        if (value == null) {
+            talking.remove(sourceId);
+        } else {
+            talking.put(sourceId, value);
+        }
+    }
+
+    /**
+     * Check if entity is talking
+     */
+    public Boolean getTalkingEntity(int entityId) {
+        Map.Entry<SourceInfo, Boolean> entry = getTalkingSources()
+                .entrySet()
+                .stream()
+                .filter(e -> {
+                    SourceInfo source = e.getKey();
+                    return source instanceof EntitySourceInfo && ((EntitySourceInfo) source).getEntityId() == entityId;
+                })
+                .findFirst()
+                .orElse(null);
+
+        return entry != null ? entry.getValue() : null;
+    }
+
     /**
      * Check if source is talking
      */
-    public Boolean getTalking(UUID uuid) {
+    public Boolean getTalkingClient(UUID uuid) {
         VoiceClientInfo client = clients.get(uuid);
         if (client != null) {
             return talking.get(client.getId());
@@ -118,6 +161,14 @@ public class ClientNetworkHandler extends ClientNetworkListener {
         }
 
         return null;
+    }
+
+    /**
+     * ru_RU
+     * Удалить source info из кэша
+     */
+    public void removeSourceInfo(int sourceId) {
+        sourcesById.remove(sourceId);
     }
 
     public void handle(FriendlyByteBuf buf) {

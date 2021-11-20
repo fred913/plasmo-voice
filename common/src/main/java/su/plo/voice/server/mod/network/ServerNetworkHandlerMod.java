@@ -64,12 +64,8 @@ public abstract class ServerNetworkHandlerMod extends ServerNetworkHandler {
     public void handleRegisterChannels(List<ResourceLocation> channels, ServerPlayer serverPlayer) {
         if (!playerToken.containsKey(serverPlayer.getUUID()) && channels.contains(VoiceServerMod.PLASMO_VOICE)
                 && !SocketServerUDP.clients.containsKey(serverPlayer.getUUID())) {
-
-            PlayerManagerMod playerManager = (PlayerManagerMod) VoiceServer.getAPI().getPlayerManager();
-            VoicePlayer player = playerManager.getByUniqueId(serverPlayer.getUUID());
-            if (player == null) {
-                player = playerManager.create(serverPlayer);
-            }
+            VoicePlayer player = ((PlayerManagerMod) VoiceServer.getAPI().getPlayerManager())
+                    .getByServerPlayer(serverPlayer);
 
             VoiceServer.getNetwork().reconnectClient(player);
         }

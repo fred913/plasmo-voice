@@ -13,6 +13,8 @@ public abstract class SourceInfo {
     protected Type type;
     @Getter
     protected int id;
+    @Getter
+    protected boolean visible;
 
     public SourceInfo() {
     }
@@ -21,17 +23,19 @@ public abstract class SourceInfo {
         return switch (Type.valueOf(buf.readUTF())) {
             case PLAYER -> new PlayerSourceInfo();
             case STATIC -> new StaticSourceInfo();
-            default -> null;
+            case ENTITY -> new EntitySourceInfo();
         };
     }
 
     public void read(ByteArrayDataInput buf) throws IOException {
         this.id = buf.readInt();
+        this.visible = buf.readBoolean();
     }
 
     public void write(ByteArrayDataOutput buf) throws IOException {
         buf.writeUTF(type.name());
         buf.writeInt(id);
+        buf.writeBoolean(visible);
     }
 
     public enum Type {

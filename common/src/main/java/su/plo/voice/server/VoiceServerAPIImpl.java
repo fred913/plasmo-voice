@@ -4,11 +4,13 @@ import org.jetbrains.annotations.Nullable;
 import su.plo.voice.api.DurationUnit;
 import su.plo.voice.api.PlasmoVoiceAPI;
 import su.plo.voice.api.ServerMuteEntry;
+import su.plo.voice.api.entity.EntityManager;
 import su.plo.voice.api.event.EventBus;
 import su.plo.voice.api.event.player.VoiceMuteEvent;
 import su.plo.voice.api.event.player.VoiceUnmuteEvent;
 import su.plo.voice.api.player.PlayerManager;
 import su.plo.voice.api.player.VoicePlayer;
+import su.plo.voice.api.sources.SourceManager;
 import su.plo.voice.protocol.packets.tcp.ClientMutedS2CPacket;
 import su.plo.voice.protocol.packets.tcp.ClientUnmutedS2CPacket;
 import su.plo.voice.server.socket.SocketServerUDP;
@@ -20,12 +22,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class VoiceServerAPIImpl implements PlasmoVoiceAPI {
+    private final SourceManagerImpl sources = new SourceManagerImpl();
     private final EventBus eventBus = new EventBusImpl();
     private final ConcurrentHashMap<UUID, ServerMuteEntry> muted = new ConcurrentHashMap<>();
     private final PlayerManager playerManager;
+    private final EntityManager entityManager;
 
-    public VoiceServerAPIImpl(PlayerManager playerManager) {
+    public VoiceServerAPIImpl(PlayerManager playerManager, EntityManager entityManager) {
         this.playerManager = playerManager;
+        this.entityManager = entityManager;
     }
 
     @Override
@@ -171,5 +176,15 @@ public class VoiceServerAPIImpl implements PlasmoVoiceAPI {
     @Override
     public PlayerManager getPlayerManager() {
         return playerManager;
+    }
+
+    @Override
+    public EntityManager getEntityManager() {
+        return entityManager;
+    }
+
+    @Override
+    public SourceManager getSourceManager() {
+        return sources;
     }
 }

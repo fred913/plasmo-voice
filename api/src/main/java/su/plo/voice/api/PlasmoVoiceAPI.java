@@ -1,8 +1,10 @@
 package su.plo.voice.api;
 
 
+import su.plo.voice.api.entity.EntityManager;
 import su.plo.voice.api.event.EventBus;
 import su.plo.voice.api.player.PlayerManager;
+import su.plo.voice.api.sources.SourceManager;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -76,7 +78,17 @@ public interface PlasmoVoiceAPI {
     EventBus getEventBus();
 
     /**
+     * @return  ...
+     */
+    EntityManager getEntityManager();
+
+    /**
      * @return ...
      */
     PlayerManager getPlayerManager();
+
+    /**
+     * Source manager для создания источников звука
+     */
+    SourceManager getSourceManager();
 }

@@ -11,7 +11,7 @@ import su.plo.voice.client.sound.clock.RtpClock;
 import su.plo.voice.client.sound.clock.WallClock;
 import su.plo.voice.client.sound.openal.AlUtil;
 import su.plo.voice.client.sound.openal.CustomSource;
-import su.plo.voice.client.sound.opus.Decoder;
+import su.plo.voice.opus.Decoder;
 import su.plo.voice.protocol.packets.udp.AudioRawS2CPacket;
 import su.plo.voice.protocol.packets.udp.MessageUdp;
 
@@ -60,6 +60,7 @@ public abstract class AbstractAudioSource extends Thread {
             }
         }
 
+        VoiceClient.getNetwork().removeSourceInfo(sourceId);
         SocketClientUDPListener.sources.remove(sourceId);
         if(source != null) {
             source.close();
@@ -97,7 +98,7 @@ public abstract class AbstractAudioSource extends Thread {
             if (endSequnceNumber > 0L &&
                     ((sequenceNumber + 1 == endSequnceNumber) ||
                             (lastPacketTime > 0L && System.currentTimeMillis() - lastPacketTime > 1000L))) {
-                reset();
+                onEnd();
             }
 
             sleep(10L);
@@ -163,7 +164,7 @@ public abstract class AbstractAudioSource extends Thread {
                     source.write(decoder.process(null));
                 }
                 if (packetsToCompensate > 0) {
-                    VoiceClient.LOGGER.debug("Packets lost: {} (source id: {})", packetsToCompensate, sourceId);
+                    VoiceClient.LOGGER.info("Packets lost: {} (source id: {})", packetsToCompensate, sourceId);
                 }
             }
         }
@@ -176,6 +177,11 @@ public abstract class AbstractAudioSource extends Thread {
         source.write(decoded);
 
         this.sequenceNumber = packet.getMessage().getSequenceNumber();
+    }
+
+    protected void onEnd() {
+        VoiceClient.getNetwork().setTalking(sourceId, null);
+        reset();
     }
 
     private void reset() {

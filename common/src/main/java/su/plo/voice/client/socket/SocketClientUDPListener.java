@@ -6,9 +6,15 @@ import su.plo.voice.client.VoiceClient;
 import su.plo.voice.client.gui.VoiceNotAvailableScreen;
 import su.plo.voice.client.gui.VoiceSettingsScreen;
 import su.plo.voice.client.sound.AbstractAudioSource;
+import su.plo.voice.client.sound.openal.DirectAudioSource;
+import su.plo.voice.client.sound.openal.EntityAudioSource;
 import su.plo.voice.client.sound.openal.PlayerAudioSource;
+import su.plo.voice.client.sound.openal.StaticAudioSource;
 import su.plo.voice.protocol.data.VoiceClientInfo;
 import su.plo.voice.protocol.packets.udp.*;
+import su.plo.voice.protocol.sources.EntitySourceInfo;
+import su.plo.voice.protocol.sources.SourceInfo;
+import su.plo.voice.protocol.sources.StaticSourceInfo;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -27,7 +33,9 @@ public class SocketClientUDPListener extends Thread implements ClientUdpPacketLi
 
     public static void close(int sourceId) {
         sources.remove(sourceId);
-        VoiceClient.getNetwork().getTalking().remove(sourceId);
+        if (VoiceClient.isConnected()) {
+            VoiceClient.getNetwork().getTalking().remove(sourceId);
+        }
     }
 
     public static void closeAll() {
@@ -45,14 +53,26 @@ public class SocketClientUDPListener extends Thread implements ClientUdpPacketLi
 
         AbstractAudioSource ch = sources.get(packet.getSourceId());
         if (ch == null) {
-            if (packet instanceof AudioPlayerS2CPacket) {
-                try {
+            try {
+                if (packet instanceof AudioPlayerS2CPacket) {
                     VoiceClientInfo client = VoiceClient.getNetwork().getClientById(packet.getSourceId());
                     ch = new PlayerAudioSource(packet.getSourceId(), client);
                     ch.write(message);
-                } catch (IOException e) {
-                    e.printStackTrace();
+                } else if (packet instanceof AudioSourceS2CPacket) {
+                    SourceInfo info = VoiceClient.getNetwork().getSourceInfo(packet.getSourceId());
+                    if (info instanceof StaticSourceInfo) {
+                        ch = new StaticAudioSource(packet.getSourceId(), (StaticSourceInfo) info);
+                        ch.write(message);
+                    } else if (info instanceof EntitySourceInfo) {
+                        ch = new EntityAudioSource(packet.getSourceId(), (EntitySourceInfo) info);
+                        ch.write(message);
+                    }
+                } else {
+                    ch = new DirectAudioSource(packet.getSourceId());
+                    ch.write(message);
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
 
             sources.put(packet.getSourceId(), ch);
@@ -81,7 +101,16 @@ public class SocketClientUDPListener extends Thread implements ClientUdpPacketLi
 
     @Override
     public void handle(AudioDirectS2CPacket packet) {
+        if (VoiceClient.getClientConfig().speakerMuted.get()) {
+            return;
+        }
 
+        VoiceClient.getNetwork().getTalking().put(
+                packet.getSourceId(),
+                false
+        );
+
+        queuePacket(packet.getMessage());
     }
 
     @SneakyThrows
@@ -105,12 +134,20 @@ public class SocketClientUDPListener extends Thread implements ClientUdpPacketLi
 
     @Override
     public void handle(AudioRawS2CPacket packet) {
-
     }
 
     @Override
     public void handle(AudioSourceS2CPacket packet) {
+        if (VoiceClient.getClientConfig().speakerMuted.get()) {
+            return;
+        }
 
+        VoiceClient.getNetwork().getTalking().put(
+                packet.getSourceId(),
+                packet.getDistance() > VoiceClient.getServerConfig().getMaxDistance()
+        );
+
+        queuePacket(packet.getMessage());
     }
 
     @Override

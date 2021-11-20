@@ -3,6 +3,7 @@ package su.plo.voice.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
+import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -16,10 +17,13 @@ import net.minecraft.world.scores.Scoreboard;
 import su.plo.voice.client.VoiceClient;
 import su.plo.voice.client.gui.PlayerVolumeHandler;
 
-public class CustomEntityRenderer {
-    private static final Minecraft client = Minecraft.getInstance();
+public class VoicePlayerRenderer {
+    @Getter
+    private static final VoicePlayerRenderer instance = new VoicePlayerRenderer();
 
-    public static void entityRender(Player player, double distance, PoseStack matrices, boolean hasLabel, MultiBufferSource vertexConsumers, int light) {
+    private final Minecraft client = Minecraft.getInstance();
+
+    public void render(Player player, double distance, PoseStack matrices, boolean hasLabel, MultiBufferSource vertexConsumers, int light) {
         if (VoiceClient.getClientConfig().showIcons.get() == 2) {
             return;
         }
@@ -43,7 +47,7 @@ public class CustomEntityRenderer {
             } else if (VoiceClient.getNetwork().isPlayerMuted(player.getUUID())) {
                 renderIcon(80, 0, player, distance, matrices, hasLabel, vertexConsumers, light);
             } else {
-                Boolean isTalking = VoiceClient.getNetwork().getTalking(player.getUUID());
+                Boolean isTalking = VoiceClient.getNetwork().getTalkingClient(player.getUUID());
                 if (isTalking != null) {
                     if (isTalking) {
                         renderIcon(96, 0, player, distance, matrices, hasLabel, vertexConsumers, light);
@@ -59,7 +63,7 @@ public class CustomEntityRenderer {
         }
     }
 
-    private static void renderPercent(Player player, double distance, PoseStack matrices, boolean hasLabel,
+    private void renderPercent(Player player, double distance, PoseStack matrices, boolean hasLabel,
                                       MultiBufferSource vertexConsumers, int light) {
         double yOffset = 0.5D;
         if (hasLabel) {
@@ -95,7 +99,7 @@ public class CustomEntityRenderer {
         matrices.popPose();
     }
 
-    private static void renderIcon(float u, float v, Player player, double distance, PoseStack matrices,
+    private void renderIcon(float u, float v, Player player, double distance, PoseStack matrices,
                                    boolean hasLabel, MultiBufferSource vertexConsumers, int light) {
         double yOffset = 0.5D;
         if (PlayerVolumeHandler.isShow(player)) {

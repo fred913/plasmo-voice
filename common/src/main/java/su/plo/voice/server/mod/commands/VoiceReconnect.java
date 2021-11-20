@@ -21,11 +21,8 @@ public class VoiceReconnect {
                             ), false);
                     ServerPlayer serverPlayer = ctx.getSource().getPlayerOrException();
 
-                    PlayerManagerMod playerManager = (PlayerManagerMod) VoiceServer.getAPI().getPlayerManager();
-                    VoicePlayer player = playerManager.getByUniqueId(serverPlayer.getUUID());
-                    if (player == null) {
-                        player = playerManager.create(serverPlayer);
-                    }
+                    VoicePlayer player = ((PlayerManagerMod) VoiceServer.getAPI().getPlayerManager())
+                            .getByServerPlayer(serverPlayer);
 
                     VoiceServer.getNetwork().reconnectClient(player);
                     return 1;

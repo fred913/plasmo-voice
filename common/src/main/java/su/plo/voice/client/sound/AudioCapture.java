@@ -11,11 +11,11 @@ import su.plo.voice.client.sound.activation.ActivationVoice;
 import su.plo.voice.client.sound.capture.AlCaptureDevice;
 import su.plo.voice.client.sound.capture.CaptureDevice;
 import su.plo.voice.client.sound.capture.JavaxCaptureDevice;
-import su.plo.voice.client.sound.opus.Encoder;
-import su.plo.voice.client.utils.AudioUtils;
+import su.plo.voice.opus.Encoder;
 import su.plo.voice.protocol.packets.tcp.AudioEndPlayerC2SPacket;
 import su.plo.voice.protocol.packets.udp.AudioPlayerC2SPacket;
 import su.plo.voice.rnnoise.Denoiser;
+import su.plo.voice.utils.AudioUtils;
 import tomp2p.opuswrapper.Opus;
 
 import javax.sound.sampled.AudioFormat;
@@ -109,7 +109,7 @@ public class AudioCapture implements Runnable {
     }
 
     public void updateBitRate(int bitRate) {
-        encoder.setBitRate(bitRate);
+        encoder.setBitrate(bitRate);
     }
 
     /**

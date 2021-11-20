@@ -30,6 +30,12 @@ dependencies {
     compileOnly("su.plo.voice:rnnoise:1.0.0")
 }
 
+repositories {
+    maven {
+        url = uri("https://m2.dv8tion.net/releases")
+    }
+}
+
 architectury {
     common(true)
 }

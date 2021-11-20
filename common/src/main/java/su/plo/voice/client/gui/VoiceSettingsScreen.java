@@ -31,7 +31,7 @@ import su.plo.voice.client.gui.widgets.MicrophoneThresholdWidget;
 import su.plo.voice.client.socket.SocketClientUDPListener;
 import su.plo.voice.client.sound.Compressor;
 import su.plo.voice.client.sound.openal.CustomSource;
-import su.plo.voice.client.utils.AudioUtils;
+import su.plo.voice.utils.AudioUtils;
 
 import java.util.*;
 

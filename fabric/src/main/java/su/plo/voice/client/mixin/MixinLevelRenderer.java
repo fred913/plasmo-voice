@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Slice;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import su.plo.voice.client.render.SphereRenderer;
+import su.plo.voice.client.render.WorldRenderer;
 
 @Mixin(LevelRenderer.class)
 public abstract class MixinLevelRenderer {
@@ -32,6 +33,7 @@ public abstract class MixinLevelRenderer {
             LightTexture lightmapTextureManager,
             Matrix4f matrix4f,
             CallbackInfo ci) {
+        WorldRenderer.getInstance().render(matrices, camera, matrix4f, minecraft);
         SphereRenderer.getInstance().render(matrices, matrix4f, minecraft);
     }
 
@@ -50,6 +52,7 @@ public abstract class MixinLevelRenderer {
             LightTexture lightmapTextureManager,
             Matrix4f matrix4f,
             CallbackInfo ci) {
+        WorldRenderer.getInstance().render(matrices, camera, matrix4f, minecraft);
         SphereRenderer.getInstance().render(matrices, matrix4f, minecraft);
     }
 }

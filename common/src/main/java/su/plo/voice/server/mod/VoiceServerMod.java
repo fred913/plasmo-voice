@@ -6,8 +6,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import su.plo.voice.api.ServerMuteEntry;
 import su.plo.voice.server.VoiceServer;
-import su.plo.voice.server.VoiceServerAPIImpl;
 import su.plo.voice.server.mod.config.ServerDataMod;
+import su.plo.voice.server.mod.entity.EntityManagerMod;
 import su.plo.voice.server.mod.metrics.Metrics;
 import su.plo.voice.server.mod.player.PlayerManagerMod;
 import su.plo.voice.server.network.ServerNetworkHandler;
@@ -31,14 +31,16 @@ public abstract class VoiceServerMod extends VoiceServer {
     private Metrics metrics;
 
     public VoiceServerMod(ServerNetworkHandler network) {
-        super(new PlayerManagerMod(), network);
+        super(network);
     }
 
     @Override
     protected void start() {
+        this.playerManager = new PlayerManagerMod();
+        this.entityManager = new EntityManagerMod();
+
         network.start();
         super.start();
-        API = new VoiceServerAPIImpl(playerManager);
     }
 
     @Override

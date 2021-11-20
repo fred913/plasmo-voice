@@ -2,22 +2,26 @@ package su.plo.voice.server.socket;
 
 import lombok.Data;
 import su.plo.voice.api.player.VoicePlayer;
+import su.plo.voice.api.sources.AudioSource;
 import su.plo.voice.protocol.packets.tcp.ClientDisconnectedS2CPacket;
 import su.plo.voice.protocol.packets.udp.*;
 import su.plo.voice.server.VoiceServer;
 
+import javax.annotation.Nonnull;
 import java.net.SocketAddress;
 
 @Data
 public class SocketClientUDP implements ServerUdpPacketListener {
     private final VoicePlayer player;
+    private final AudioSource source;
 
     private final SocketAddress address;
     private long keepAlive;
     private long sentKeepAlive;
 
-    public SocketClientUDP(VoicePlayer player, SocketAddress address) {
+    public SocketClientUDP(@Nonnull VoicePlayer player, @Nonnull AudioSource source, @Nonnull SocketAddress address) {
         this.player = player;
+        this.source = source;
         this.address = address;
         this.keepAlive = System.currentTimeMillis();
     }
@@ -40,9 +44,7 @@ public class SocketClientUDP implements ServerUdpPacketListener {
             );
         }
 
-        if (player.getId() != 0) {
-            VoiceServer.getSources().unregister(player.getId());
-        }
+        VoiceServer.getAPI().getSourceManager().destroy(source.getId());
     }
 
     @Override
@@ -72,15 +74,9 @@ public class SocketClientUDP implements ServerUdpPacketListener {
             return;
         }
 
-        AudioPlayerS2CPacket serverPacket = new AudioPlayerS2CPacket(
-                player.getId(),
-                packet.getDistance(),
-                packet.getData()
-        );
-        SocketServerUDP.sendToNearbyPlayers(
-                serverPacket,
-                packet.getMessage().getTimestamp(), packet.getMessage().getSequenceNumber(),
-                player, packet.getDistance()
+        source.send(
+                packet.getData(), true, packet.getDistance(),
+                packet.getMessage().getTimestamp(), packet.getMessage().getSequenceNumber()
         );
     }
 

@@ -1,0 +1,27 @@
+{
+    "schemaVersion": 1,
+    "id": "pvoice-api-example",
+    "version": "${version}",
+    "name": "PVoiceApiExample",
+    "description": "",
+    "authors": [
+        "Apehum"
+    ],
+    "contact": {},
+    "license": "All rights reserved",
+    "icon": "assets/pvoice-api-example/icon.png",
+    "environment": "*",
+    "entrypoints": {
+        "main": [
+            "su.plo.voice.example.PVoiceApiExample"
+        ]
+    },
+    "mixins": [
+        "pvoice-api-example.mixins.json"
+    ],
+    "depends": {
+        "fabricloader": ">=0.11.6",
+        "fabric": "*",
+        "minecraft": "1.17.1"
+    }
+}

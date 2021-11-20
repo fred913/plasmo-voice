@@ -1,7 +1,7 @@
 package su.plo.voice.client.sound.activation;
 
 import su.plo.voice.client.VoiceClient;
-import su.plo.voice.client.utils.AudioUtils;
+import su.plo.voice.utils.AudioUtils;
 
 public class ActivationVoice implements Activation {
     private long lastSpeak;

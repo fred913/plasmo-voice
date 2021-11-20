@@ -212,7 +212,7 @@ public class ClientConfig {
             entry = voiceVolume;
         }
 
-        return entry.get() * playerVolumes.getOrDefault(uuid, 1.0D);
+        return entry.get() * (uuid != null ? playerVolumes.getOrDefault(uuid, 1.0D) : 1.0D);
     }
 
     public static class ServerConfig {

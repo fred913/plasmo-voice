@@ -1,7 +1,7 @@
 package su.plo.voice.client.sound;
 
 import su.plo.voice.client.VoiceClient;
-import su.plo.voice.client.utils.AudioUtils;
+import su.plo.voice.utils.AudioUtils;
 
 public class Limiter {
     private static final float limiterSlope = 1.0F;

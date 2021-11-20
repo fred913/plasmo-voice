@@ -7,18 +7,15 @@ import su.plo.voice.api.player.VoicePlayer;
 import su.plo.voice.server.VoiceServer;
 import su.plo.voice.server.config.Configuration;
 import su.plo.voice.server.mod.VoiceServerMod;
-import su.plo.voice.server.socket.SocketClientUDP;
-import su.plo.voice.server.socket.SocketServerUDP;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class PlayerManagerMod implements PlayerManager {
     @Getter
-    private final ConcurrentHashMap<UUID, Map<String, Boolean>> permissions = new ConcurrentHashMap<>();
-//    private final ConcurrentHashMap<UUID, VoicePlayerMod> clients = new ConcurrentHashMap<>();
+    private final Map<UUID, Map<String, Boolean>> permissions = new HashMap<>();
+    private final Map<UUID, VoicePlayer> clients = new HashMap<>();
 
     public synchronized boolean hasPermission(UUID player, String permission) {
         Map<String, Boolean> perms = permissions.get(player);
@@ -76,42 +73,36 @@ public class PlayerManagerMod implements PlayerManager {
     }
 
     @Override
-    public VoicePlayer getByUniqueId(UUID playerId) {
+    public synchronized VoicePlayer getByUniqueId(UUID playerId) {
         ServerPlayer serverPlayer = VoiceServerMod.getServer().getPlayerList().getPlayer(playerId);
         if (serverPlayer == null) {
             return null;
         }
 
-        SocketClientUDP client = SocketServerUDP.clients.get(playerId);
-        if (client == null) {
-            return null;
+        VoicePlayer player = clients.get(playerId);
+        if (player == null) {
+            player = new VoicePlayerMod(this, 0, serverPlayer, null);
+            clients.put(playerId, player);
         }
 
-        return client.getPlayer();
+        return player;
+    }
+
+    public synchronized VoicePlayer getByServerPlayer(ServerPlayer serverPlayer) {
+        VoicePlayerMod player = (VoicePlayerMod) clients.get(serverPlayer.getUUID());
+        if (player != null) {
+            player.setServerPlayer(serverPlayer);
+        } else {
+            player = new VoicePlayerMod(this, 0, serverPlayer, null);
+            clients.put(serverPlayer.getUUID(), player);
+        }
+
+        return player;
     }
 
     @Override
     public boolean isVanillaPlayer(UUID playerId) {
         return false;
-    }
-
-    @Override
-    public VoicePlayer create(int id, UUID playerId, String type) {
-        ServerPlayer serverPlayer = VoiceServerMod.getServer().getPlayerList().getPlayer(playerId);
-        if (serverPlayer == null) {
-            return null;
-        }
-
-        return new VoicePlayerMod(this, id, serverPlayer, type);
-    }
-
-    public VoicePlayer create(ServerPlayer serverPlayer) {
-        return new VoicePlayerMod(this, 0, serverPlayer, null);
-    }
-
-    @Override
-    public VoicePlayer create(UUID playerId) {
-        return null;
     }
 
     public static boolean isOp(UUID player) {

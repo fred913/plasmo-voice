@@ -7,8 +7,6 @@ import su.plo.voice.protocol.data.VoiceClientInfo;
 import su.plo.voice.protocol.packets.udp.AudioPlayerS2CPacket;
 import su.plo.voice.protocol.packets.udp.AudioRawS2CPacket;
 
-import java.util.Random;
-
 public class PlayerAudioSource extends AbstractAudioSource {
     private final VoiceClientInfo client;
 
@@ -17,8 +15,6 @@ public class PlayerAudioSource extends AbstractAudioSource {
         this.client = client;
         this.start();
     }
-
-    private final Random random = new Random();
 
     @Override
     protected boolean process(AudioRawS2CPacket pkt) {

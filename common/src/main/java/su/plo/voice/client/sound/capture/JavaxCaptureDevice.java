@@ -2,7 +2,7 @@ package su.plo.voice.client.sound.capture;
 
 import su.plo.voice.client.VoiceClient;
 import su.plo.voice.client.sound.AudioCapture;
-import su.plo.voice.client.utils.AudioUtils;
+import su.plo.voice.utils.AudioUtils;
 
 import javax.sound.sampled.*;
 import java.util.ArrayList;

@@ -24,13 +24,6 @@ public abstract class ServerNetworkHandler {
         return listener;
     }
 
-    public synchronized void updatePlayer(VoicePlayer player) {
-        if (listeners.containsKey(player.getUniqueId())) {
-            ServerNetworkListener listener = listeners.get(player.getUniqueId());
-            listener.setPlayer(player);
-        }
-    }
-
     public synchronized UUID findByToken(String token) {
         UUID playerId = null;
         for (Map.Entry<UUID, UUID> entry : playerToken.entrySet()) {

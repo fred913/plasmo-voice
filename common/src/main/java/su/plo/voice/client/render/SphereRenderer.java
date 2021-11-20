@@ -116,7 +116,6 @@ public class SphereRenderer {
         RenderSystem.lineWidth(1f);
 
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
         vertexBuffer.drawWithShader(matrices.last().pose(), matrix4f, GameRenderer.getPositionColorShader());
 
         matrices.popPose();

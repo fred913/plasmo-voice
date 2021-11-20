@@ -44,12 +44,8 @@ public class ServerNetworkHandlerFabric extends ServerNetworkHandlerMod {
         if (channels.size() > 0) {
             if (!playerToken.containsKey(serverPlayer.getUUID()) && channels.contains(VoiceServerMod.PLASMO_VOICE)
                     && !SocketServerUDP.clients.containsKey(serverPlayer.getUUID())) {
-                PlayerManagerMod playerManager = (PlayerManagerMod) VoiceServer.getAPI().getPlayerManager();
-                VoicePlayer player = playerManager.getByUniqueId(serverPlayer.getUUID());
-                if (player == null) {
-                    player = playerManager.create(serverPlayer);
-                }
-
+                VoicePlayer player = ((PlayerManagerMod) VoiceServer.getAPI().getPlayerManager())
+                        .getByServerPlayer(serverPlayer);
                 VoiceServer.getNetwork().reconnectClient(player);
 
                 if (!channels.contains(FML_HANDSHAKE)) {
@@ -72,11 +68,8 @@ public class ServerNetworkHandlerFabric extends ServerNetworkHandlerMod {
     }
 
     public void handle(MinecraftServer server, ServerPlayer serverPlayer, ServerGamePacketListenerImpl handler, FriendlyByteBuf buf, PacketSender responseSender) {
-        PlayerManagerMod playerManager = (PlayerManagerMod) VoiceServer.getAPI().getPlayerManager();
-        VoicePlayer player = playerManager.getByUniqueId(serverPlayer.getUUID());
-        if (player == null) {
-            player = playerManager.create(serverPlayer);
-        }
+        VoicePlayer player = VoiceServer.getAPI().getPlayerManager()
+                .getByUniqueId(serverPlayer.getUUID());
 
         byte[] data = new byte[buf.readableBytes()];
         buf.duplicate().readBytes(data);

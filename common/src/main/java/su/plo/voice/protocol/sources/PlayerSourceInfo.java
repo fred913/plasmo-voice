@@ -15,8 +15,8 @@ public class PlayerSourceInfo extends SourceInfo {
         client = new VoiceClientInfo();
     }
 
-    public PlayerSourceInfo(int id, VoiceClientInfo client) {
-        super(Type.PLAYER, id);
+    public PlayerSourceInfo(int id, VoiceClientInfo client, boolean visible) {
+        super(Type.PLAYER, id, visible);
         this.client = client;
     }
 

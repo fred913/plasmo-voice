@@ -5,6 +5,7 @@ import su.plo.voice.api.player.VoicePlayer;
 import su.plo.voice.protocol.data.VoiceClientInfo;
 import su.plo.voice.protocol.packets.tcp.*;
 import su.plo.voice.protocol.sources.SourceInfo;
+import su.plo.voice.server.SourceManagerImpl;
 import su.plo.voice.server.VoiceServer;
 import su.plo.voice.server.config.ServerConfig;
 import su.plo.voice.server.socket.SocketServerUDP;
@@ -113,7 +114,8 @@ public class ServerNetworkListener implements ServerTcpPacketListener {
 
     @Override
     public void handle(SourceInfoC2SPacket packet) {
-        SourceInfo source = VoiceServer.getSources().getInfo(packet.getId());
+        SourceInfo source = ((SourceManagerImpl) VoiceServer.getAPI().getSourceManager())
+                .getInfo(packet.getId());
         if (source != null) {
             VoiceServer.getNetwork().sendTo(player, new SourceInfoS2CPacket(source));
         }

@@ -5,14 +5,14 @@
     "compatibilityLevel": "JAVA_16",
     "mixins": [],
     "client": [
-        "MixinKeyboardHandler",
-        "MixinLevelRenderer",
-        "MixinMinecraft",
-        "MixinMouseHandler",
-        "MixinPlayerEntry",
-        "MixinPlayerRenderer",
-        "MixinSkinManager",
-        "MixinSoundEngine"
+      "MixinEntityRenderer",
+      "MixinKeyboardHandler",
+      "MixinLevelRenderer",
+      "MixinMinecraft",
+      "MixinMouseHandler",
+      "MixinPlayerEntry",
+      "MixinSkinManager",
+      "MixinSoundEngine"
     ],
     "injectors": {
         "defaultRequire": 1

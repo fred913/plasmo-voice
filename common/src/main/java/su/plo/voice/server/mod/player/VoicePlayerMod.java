@@ -1,9 +1,14 @@
 package su.plo.voice.server.mod.player;
 
 import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.storage.ServerLevelData;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
+import su.plo.voice.api.Pos3d;
 import su.plo.voice.api.player.VoicePlayer;
 import su.plo.voice.server.mod.VoiceServerMod;
 
@@ -11,21 +16,23 @@ import java.util.UUID;
 
 public class VoicePlayerMod implements VoicePlayer {
     private final PlayerManagerMod playerManager;
+    @Setter
     @Getter
-    private final ServerPlayer serverPlayer;
-    private final int id;
-    private final String type;
+    private ServerPlayer serverPlayer;
+    @Setter
+    @Getter
+    private int id;
 
-    public VoicePlayerMod(PlayerManagerMod playerManager, int id, ServerPlayer player, String type) {
+    @Setter
+    @Getter
+    @Nullable
+    private String modLoader;
+
+    public VoicePlayerMod(PlayerManagerMod playerManager, int id, ServerPlayer player, @Nullable String modLoader) {
         this.playerManager = playerManager;
         this.serverPlayer = player;
         this.id = id;
-        this.type = type;
-    }
-
-    @Override
-    public int getId() {
-        return id;
+        this.modLoader = modLoader;
     }
 
     @Override
@@ -61,19 +68,29 @@ public class VoicePlayerMod implements VoicePlayer {
     }
 
     @Override
-    public boolean inRadius(VoicePlayer player, double maxDistanceSquared) {
-        ServerPlayer serverPlayer = ((VoicePlayerMod) player).getServerPlayer();
-        return this.serverPlayer.position().distanceToSqr(serverPlayer.position()) <= maxDistanceSquared;
+    public boolean inRadius(String world, Pos3d pos, double maxDistanceSquared) {
+        if (!getWorld().equals(world)) {
+            return false;
+        }
+
+        Vec3 position = new Vec3(pos.getX(), pos.getY(), pos.getZ());
+        return position.distanceToSqr(serverPlayer.position()) < maxDistanceSquared;
+    }
+
+    @Override
+    public Pos3d getPosition() {
+        Vec3 position = serverPlayer.position();
+        return new Pos3d(position.x, position.y, position.z);
+    }
+
+    @Override
+    public String getWorld() {
+        return ((ServerLevelData) serverPlayer.getLevel().getLevelData()).getLevelName();
     }
 
     @Override
     public boolean isVanillaPlayer() {
         return false;
-    }
-
-    @Override
-    public String getModLoader() {
-        return type;
     }
 
     @Override

@@ -1,11 +1,11 @@
 package su.plo.voice.server.socket;
 
 import su.plo.voice.api.player.VoicePlayer;
+import su.plo.voice.api.sources.PlayerAudioSource;
 import su.plo.voice.protocol.packets.udp.AuthC2SPacket;
 import su.plo.voice.protocol.packets.udp.AuthS2CPacket;
 import su.plo.voice.protocol.packets.udp.MessageUdp;
 import su.plo.voice.protocol.packets.udp.PingS2CPacket;
-import su.plo.voice.protocol.sources.SourceInfo;
 import su.plo.voice.server.VoiceServer;
 
 import java.io.IOException;
@@ -76,17 +76,15 @@ public class SocketServerUDPQueue extends Thread {
         UUID playerId = VoiceServer.getNetwork().findByToken(packet.getToken());
 
         if (playerId != null) {
-            SourceInfo source = VoiceServer.getSources().registerPlayerSource(playerId);
+            // register player source
+            PlayerAudioSource source = VoiceServer.getAPI().getSourceManager().registerPlayer(playerId);
 
-            VoicePlayer player = VoiceServer.getAPI().getPlayerManager().create(
-                    source.getId(),
-                    playerId,
-                    VoiceServer.getAPI().getPlayerManager().isVanillaPlayer(playerId)  ? "forge" : "fabric"
-            );
+            VoicePlayer player = VoiceServer.getAPI().getPlayerManager().getByUniqueId(playerId);
 
-            VoiceServer.getNetwork().updatePlayer(player);
+            player.setId(source.getId());
+            player.setModLoader(VoiceServer.getAPI().getPlayerManager().isVanillaPlayer(playerId)  ? "forge" : "fabric");
 
-            SocketClientUDP sock = new SocketClientUDP(player, message.getAddress());
+            SocketClientUDP sock = new SocketClientUDP(player, source, message.getAddress());
 
             if (!SocketServerUDP.clients.containsKey(player.getUniqueId())) {
                 SocketServerUDP.clients.put(player.getUniqueId(), sock);
