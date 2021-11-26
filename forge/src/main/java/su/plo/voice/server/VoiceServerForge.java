@@ -7,18 +7,25 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fmlserverevents.FMLServerStartedEvent;
 import net.minecraftforge.fmlserverevents.FMLServerStoppingEvent;
+import su.plo.voice.server.mod.VoiceServerMod;
 import su.plo.voice.server.mod.commands.CommandManager;
-import su.plo.voice.server.mod.network.ServerNetworkHandlerForge;
+import su.plo.voice.server.network.ServerNetworkHandlerForge;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VoiceServerForge extends VoiceServer {
-    static {
-        network = new ServerNetworkHandlerForge();
+public class VoiceServerForge extends VoiceServerMod {
+    private final ServerNetworkHandlerForge modNetwork;
+    private int[] version = new int[3];
+
+    public VoiceServerForge() {
+        super(new ServerNetworkHandlerForge());
+        this.modNetwork = (ServerNetworkHandlerForge) network;
+        loadVersion();
     }
 
     @Override
@@ -33,12 +40,21 @@ public class VoiceServerForge extends VoiceServer {
         super.close();
     }
 
-    public static void onChannelRegister(ServerboundCustomPayloadPacket packet, ServerPlayer player) {
+    @Override
+    public int[] getVersion() {
+        return version;
+    }
+
+    private void loadVersion() {
+        version = calculateVersion(ModList.get().getModFileById("plasmo_voice").versionString());
+    }
+
+    public void onChannelRegister(ServerboundCustomPayloadPacket packet, ServerPlayer player) {
         FriendlyByteBuf buffer = packet.getData();
         byte[] data = new byte[Math.max(buffer.readableBytes(), 0)];
         buffer.readBytes(data);
 
-        network.handleRegisterChannels(bytesToResLocation(data), player);
+        modNetwork.handleRegisterChannels(bytesToResLocation(data), player);
     }
 
     private static List<ResourceLocation> bytesToResLocation(byte[] all) {
@@ -62,14 +78,14 @@ public class VoiceServerForge extends VoiceServer {
     @SubscribeEvent
     public void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getPlayer() instanceof ServerPlayer player) {
-            network.handleJoin(player);
+            modNetwork.handleJoin(player);
         }
     }
 
     @SubscribeEvent
     public void onPlayerQuit(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getPlayer() instanceof ServerPlayer player) {
-            network.handleQuit(player);
+            modNetwork.handleQuit(player);
         }
     }
 

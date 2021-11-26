@@ -33,6 +33,7 @@ import su.plo.voice.client.sound.Compressor;
 import su.plo.voice.client.sound.openal.CustomSource;
 import su.plo.voice.utils.AudioUtils;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 public class VoiceSettingsScreen extends Screen {
@@ -109,9 +110,9 @@ public class VoiceSettingsScreen extends Screen {
         return about ? aboutWidget : this.tabWidgets.get(active);
     }
 
-    public void setMicrophoneValue(final short[] buffer) {
+    public void setMicrophoneValue(short[] buffer) {
         if (VoiceClient.getClientConfig().compressor.get()) {
-            compressor.compress(buffer);
+            buffer = compressor.compress(buffer);
         }
 
         microphoneDB = AudioUtils.getHighestAudioLevel(buffer);
@@ -131,10 +132,11 @@ public class VoiceSettingsScreen extends Screen {
         }
 
         if (source != null) {
+            short[] finalBuffer = buffer;
             VoiceClient.getSoundEngine().runInContext(() -> {
                 source.setPosition(new Vec3(0, 0, 0));
                 source.setVolume(VoiceClient.getClientConfig().voiceVolume.get().floatValue());
-                source.write(buffer);
+                source.write(finalBuffer);
             });
         }
     }
@@ -162,8 +164,10 @@ public class VoiceSettingsScreen extends Screen {
         super.removed();
 
         VoiceClient.getSoundEngine().runInContext(() -> {
-            source.close();
-            this.source = null;
+            if (source != null) {
+                source.close();
+                this.source = null;
+            }
         });
 
         VoiceClient.getClientConfig().save();
@@ -272,6 +276,20 @@ public class VoiceSettingsScreen extends Screen {
 
     public void updateGeneralTab() {
         this.tabWidgets.put(tabButtons.get(0), new GeneralTabWidget(client, this));
+    }
+
+    public void update() {
+        int index = tabButtons.indexOf(active);
+
+        this.tabButtons.clear();
+        this.tabWidgets.clear();
+        addTab(new TranslatableComponent("gui.plasmo_voice.general"), new GeneralTabWidget(client, this));
+        addTab(new TranslatableComponent("gui.plasmo_voice.advanced"), new AdvancedTabWidget(client, this));
+        addTab(new TranslatableComponent("gui.plasmo_voice.hotkeys"), new KeyBindingsTabWidget(client, this));
+        aboutWidget = new AboutTabWidget(client, this);
+        if (!about) {
+            active = tabButtons.get(index);
+        }
     }
 
     public void closeSpeaker() {
@@ -509,5 +527,15 @@ public class VoiceSettingsScreen extends Screen {
         }
 
         this.drawString(matrices, minecraft.font, roflanDebugText, 16, 64, 16777215);
+    }
+
+    @Nullable
+    public static VoiceSettingsScreen opened() {
+        Screen screen = Minecraft.getInstance().screen;
+        if (screen != null && Minecraft.getInstance().screen instanceof VoiceSettingsScreen) {
+            return (VoiceSettingsScreen) screen;
+        }
+
+        return null;
     }
 }

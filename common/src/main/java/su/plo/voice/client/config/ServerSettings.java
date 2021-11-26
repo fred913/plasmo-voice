@@ -4,8 +4,10 @@ import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Setter;
 import su.plo.voice.client.VoiceClient;
+import su.plo.voice.client.gui.VoiceSettingsScreen;
 import su.plo.voice.client.render.SphereRenderer;
 import su.plo.voice.client.socket.SocketClientUDPListener;
+import su.plo.voice.client.sound.activation.Activation;
 import su.plo.voice.protocol.packets.tcp.ConfigS2CPacket;
 import su.plo.voice.protocol.packets.tcp.PermissionsS2CPacket;
 
@@ -32,8 +34,8 @@ public class ServerSettings {
     private boolean canSpeak;
     private boolean priority;
     private boolean activation;
-    // todo impl
     private boolean forceSoundOcclusion;
+    // todo impl
     private int forceDistance;
     private int forcePriorityDistance;
 
@@ -52,9 +54,16 @@ public class ServerSettings {
         }
         if (packet.getActivation() != null) {
             this.activation = packet.getActivation();
+            if (!activation) {
+                VoiceClient.recorder.updateActivation(Activation.Type.PushToTalk);
+            }
         }
         if (packet.getForceSoundOcclusion() != null) {
             this.forceSoundOcclusion = packet.getForceSoundOcclusion();
+        }
+
+        if (VoiceSettingsScreen.opened() != null) {
+            VoiceSettingsScreen.opened().update();
         }
     }
 

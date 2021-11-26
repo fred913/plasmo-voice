@@ -14,7 +14,6 @@ public class ClientNetworkEvent {
 
     @SubscribeEvent
     public void disconnectEvent(WorldEvent.Unload event) {
-        // Not just changing the world - Disconnecting
         if (minecraft.gameMode == null) {
             VoiceClientForge.disconnect();
         }

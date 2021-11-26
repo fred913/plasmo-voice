@@ -39,7 +39,6 @@ public class ServerNetworkListener implements ServerTcpPacketListener {
     public void handle(ConnectC2SPacket packet) {
         ServerConfig config = VoiceServer.getServerConfig();
 
-        System.out.println(packet.getVersion());
         int[] version = VoiceServer.calculateVersion(packet.getVersion());
 
         if (version[0] > VoiceServer.getInstance().getVersion()[0]) {

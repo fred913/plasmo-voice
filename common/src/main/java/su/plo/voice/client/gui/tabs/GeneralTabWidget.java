@@ -66,10 +66,19 @@ public class GeneralTabWidget extends TabWidget {
                     })
             );
         }
-        ToggleButton occlusion = new ToggleButton(0, 0, 97, 20, VoiceClient.getClientConfig().occlusion, toggled ->
-                VoiceClient.getClientConfig().occlusion.set(toggled)
+        ToggleButton occlusion = new ToggleButton(this,
+                0, 0, 97, 20,
+                VoiceClient.getClientConfig().occlusion,
+                VoiceClient.getServerConfig().isForceSoundOcclusion() ? true : null,
+                toggled -> VoiceClient.getClientConfig().occlusion.set(toggled)
         );
-        occlusion.active = !VoiceClient.getSoundEngine().isSoundPhysics();
+        if (VoiceClient.getServerConfig().isForceSoundOcclusion()) {
+            occlusion.setTooltip(ImmutableList.of(new TranslatableComponent("gui.plasmo_voice.general.occlusion.server_forced")));
+            occlusion.active = false;
+        } else if (VoiceClient.getSoundEngine().isSoundPhysics()) {
+            occlusion.setTooltip(ImmutableList.of(new TranslatableComponent("gui.plasmo_voice.general.occlusion.sound_physics")));
+            occlusion.active = false;
+        }
         this.addEntry(new OptionEntry(
                 new TranslatableComponent("gui.plasmo_voice.general.occlusion"),
                 occlusion,

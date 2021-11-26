@@ -19,23 +19,23 @@ import su.plo.voice.server.network.ServerNetworkHandler;
 import su.plo.voice.server.socket.SocketClientUDP;
 import su.plo.voice.server.socket.SocketServerUDP;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public abstract class ServerNetworkHandlerMod extends ServerNetworkHandler {
+    protected static final ResourceLocation FML_HANDSHAKE = new ResourceLocation("fml:handshake");
+    protected final Set<UUID> fabricPlayers = new HashSet<>();
     protected ScheduledExecutorService scheduler;
     private static ExecutorService executor;
 
     public ServerNetworkHandlerMod() {
     }
 
-    public boolean isVanillaPlayer(ServerPlayer player) {
-        return true;
+    public boolean isFabricPlayer(ServerPlayer player) {
+        return !fabricPlayers.contains(player.getUUID());
     }
 
     public void start() {
@@ -68,6 +68,10 @@ public abstract class ServerNetworkHandlerMod extends ServerNetworkHandler {
                     .getByServerPlayer(serverPlayer);
 
             VoiceServer.getNetwork().reconnectClient(player);
+
+            if (!channels.contains(FML_HANDSHAKE)) {
+                fabricPlayers.add(player.getUniqueId());
+            }
         }
     }
 
@@ -82,6 +86,7 @@ public abstract class ServerNetworkHandlerMod extends ServerNetworkHandler {
     }
 
     public void handleQuit(ServerPlayer player) {
+        fabricPlayers.remove(player.getUUID());
         playerToken.remove(player.getUUID());
         listeners.remove(player.getUUID());
 

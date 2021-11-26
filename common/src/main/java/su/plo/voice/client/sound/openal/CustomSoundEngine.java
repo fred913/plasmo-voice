@@ -13,7 +13,6 @@ import org.lwjgl.openal.*;
 import su.plo.voice.client.VoiceClient;
 import su.plo.voice.client.gui.VoiceSettingsScreen;
 import su.plo.voice.client.socket.SocketClientUDPListener;
-import su.plo.voice.client.sound.AbstractAudioSource;
 import su.plo.voice.client.sound.AudioCapture;
 import su.plo.voice.client.sound.capture.JavaxCaptureDevice;
 
@@ -40,7 +39,6 @@ public class CustomSoundEngine {
     public boolean initialized;
     @Getter
     private boolean hrtfSupported;
-    @Getter
     protected boolean soundPhysics;
     private final ScheduledExecutorService executor;
 
@@ -309,5 +307,10 @@ public class CustomSoundEngine {
         } catch (ClassNotFoundException | NoSuchMethodException |
                 InvocationTargetException | IllegalAccessException ignored) {
         }
+    }
+
+    public boolean isSoundPhysics() {
+        // todo sound physics config "enabled" check
+        return soundPhysics;
     }
 }

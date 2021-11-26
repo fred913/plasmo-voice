@@ -1,7 +1,7 @@
 package su.plo.voice.client;
 
-import lombok.Getter;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.network.Connection;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fmlclient.registry.ClientRegistry;
@@ -10,6 +10,7 @@ import su.plo.voice.client.event.ClientInputEvent;
 import su.plo.voice.client.event.ClientNetworkEvent;
 import su.plo.voice.client.event.RenderEvent;
 import su.plo.voice.client.event.VoiceChatCommandEvent;
+import su.plo.voice.client.network.ClientNetworkHandler;
 
 public class VoiceClientForge extends VoiceClient {
     public VoiceClientForge() {
@@ -17,6 +18,10 @@ public class VoiceClientForge extends VoiceClient {
         MinecraftForge.EVENT_BUS.register(new ClientNetworkEvent());
         MinecraftForge.EVENT_BUS.register(new RenderEvent());
         MinecraftForge.EVENT_BUS.register(new VoiceChatCommandEvent());
+    }
+
+    public void initializeNetwork(Connection connection) {
+        this.network = new ClientNetworkHandler(connection);
     }
 
     @Override

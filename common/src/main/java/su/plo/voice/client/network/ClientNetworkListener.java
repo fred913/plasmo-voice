@@ -13,7 +13,7 @@ import su.plo.voice.client.config.ServerSettings;
 import su.plo.voice.client.gui.VoiceNotAvailableScreen;
 import su.plo.voice.client.socket.SocketClientUDP;
 import su.plo.voice.client.socket.SocketClientUDPListener;
-import su.plo.voice.client.sound.AbstractAudioSource;
+import su.plo.voice.client.sound.openal.AbstractAudioSource;
 import su.plo.voice.protocol.data.VoiceClientInfo;
 import su.plo.voice.protocol.packets.Packet;
 import su.plo.voice.protocol.packets.tcp.*;
@@ -112,7 +112,6 @@ public class ClientNetworkListener implements ClientTcpPacketListener {
 
         if (!(info instanceof PlayerSourceInfo)) {
             sourcesById.put(info.getId(), info);
-            System.out.println(sourcesById.get(info.getId()));
         }
     }
     /* Source info response */
@@ -137,7 +136,6 @@ public class ClientNetworkListener implements ClientTcpPacketListener {
 
     @Override
     public void handle(PermissionsS2CPacket packet) {
-
         if (VoiceClient.getServerConfig() != null) {
             VoiceClient.getServerConfig().update(packet);
         }

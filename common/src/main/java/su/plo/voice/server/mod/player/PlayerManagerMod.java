@@ -15,50 +15,56 @@ import java.util.UUID;
 public class PlayerManagerMod implements PlayerManager {
     @Getter
     private final Map<UUID, Map<String, Boolean>> permissions = new HashMap<>();
-    private final Map<UUID, VoicePlayer> clients = new HashMap<>();
+    protected final Map<UUID, VoicePlayer> clients = new HashMap<>();
 
-    public synchronized boolean hasPermission(UUID player, String permission) {
-        Map<String, Boolean> perms = permissions.get(player);
+    public synchronized boolean hasPermission(UUID playerId, String permission) {
+        Map<String, Boolean> perms = permissions.get(playerId);
         if (perms != null) {
-            return perms.getOrDefault(permission, hasDefaultPermission(player, permission));
+            return perms.getOrDefault(permission, hasDefaultPermission(playerId, permission));
         } else {
-            return hasDefaultPermission(player, permission);
+            return hasDefaultPermission(playerId, permission);
         }
     }
 
-    public synchronized void setPermission(UUID uuid, String permission, boolean value) {
-        if (hasDefaultPermission(uuid, permission) == value) {
-            unSetPermission(uuid, permission);
+    public synchronized void setPermission(VoicePlayer player, String permission, boolean value) {
+        if (hasDefaultPermission(player.getUniqueId(), permission) == value) {
+            unSetPermission(player, permission);
             return;
         }
 
-        if (permissions.containsKey(uuid)) {
-            Map<String, Boolean> perms = permissions.get(uuid);
+        if (permissions.containsKey(player.getUniqueId())) {
+            Map<String, Boolean> perms = permissions.get(player.getUniqueId());
             perms.put(permission, value);
         } else {
             Map<String, Boolean> perms = new HashMap<>();
             perms.put(permission, value);
-            permissions.put(uuid, perms);
+            permissions.put(player.getUniqueId(), perms);
         }
 
         VoiceServer.getInstance().saveData(true);
+
+        // send permissions update to player
+        player.updatePermissions();
     }
 
-    public synchronized void unSetPermission(UUID uuid, String permission) {
-        if (permissions.containsKey(uuid)) {
-            Map<String, Boolean> perms = permissions.get(uuid);
+    public synchronized void unSetPermission(VoicePlayer player, String permission) {
+        if (permissions.containsKey(player.getUniqueId())) {
+            Map<String, Boolean> perms = permissions.get(player.getUniqueId());
             perms.remove(permission);
         }
 
         VoiceServer.getInstance().saveData(true);
+
+        // send permissions update to player
+        player.updatePermissions();
     }
 
-    public boolean hasDefaultPermission(UUID player, String permission) {
+    public boolean hasDefaultPermission(UUID playerId, String permission) {
         String defaultPermission = getDefaultPermission(permission);
         if (defaultPermission.equals("op")) {
-            return isOp(player);
+            return isOp(playerId);
         } else {
-            return true;
+            return !defaultPermission.equals("false");
         }
     }
 

@@ -58,8 +58,7 @@ public class AudioCapture implements Runnable {
         if (VoiceClient.getClientConfig().rnNoise.get()) {
             this.denoiser = new Denoiser();
         }
-        if (!VoiceClient.getClientConfig().voiceActivation.get() ||
-                !VoiceClient.getServerConfig().isActivation()) {
+        if (!VoiceClient.getClientConfig().voiceActivation.get()) {
             updateActivation(Activation.Type.PushToTalk);
         } else {
             updateActivation(Activation.Type.Voice);
@@ -234,6 +233,7 @@ public class AudioCapture implements Runnable {
 
             // muted
             if ((VoiceClient.getClientConfig().microphoneMuted.get() || VoiceClient.getClientConfig().speakerMuted.get()) ||
+                    !VoiceClient.getServerConfig().isCanSpeak() ||
                     VoiceClient.getNetwork().isPlayerMuted(player.getUUID())) {
                 VoiceClient.setSpeaking(false);
                 VoiceClient.setSpeakingPriority(false);
@@ -282,7 +282,6 @@ public class AudioCapture implements Runnable {
             samples = limiter.limit(samples);
 
             float[] floats = AudioUtils.shortsToFloats(samples);
-
             samples = AudioUtils.floatsToShorts(this.denoiser.process(floats));
         }
 

@@ -10,6 +10,8 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import su.plo.voice.api.Pos3d;
 import su.plo.voice.api.player.VoicePlayer;
+import su.plo.voice.protocol.packets.tcp.PermissionsS2CPacket;
+import su.plo.voice.server.VoiceServer;
 import su.plo.voice.server.mod.VoiceServerMod;
 
 import java.util.UUID;
@@ -95,7 +97,23 @@ public class VoicePlayerMod implements VoicePlayer {
 
     @Override
     public boolean hasPermission(String permission) {
-        return playerManager.hasPermission(getUniqueId(), permission);
+        return playerManager.hasPermission(this.getUniqueId(), permission);
+    }
+
+    @Override
+    public void updatePermissions() {
+        VoiceServer.getNetwork().sendTo(
+                this,
+                new PermissionsS2CPacket(
+                        hasPermission("voice.priority"),
+                        hasPermission("voice.speak"),
+                        hasPermission("voice.activation"),
+                        hasPermission("voice.force_sound_occlusion"),
+                        !hasPermission("voice.icons"),
+                        getForceDistance(),
+                        getForcePriorityDistance()
+                )
+        );
     }
 
     @Override

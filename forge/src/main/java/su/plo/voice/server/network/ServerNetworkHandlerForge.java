@@ -1,26 +1,27 @@
-package su.plo.voice.server.mod.network;
+package su.plo.voice.server.network;
 
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
+import su.plo.voice.api.player.VoicePlayer;
 import su.plo.voice.protocol.packets.Packet;
-import su.plo.voice.protocol.packets.tcp.ClientConnectPacket;
-import su.plo.voice.protocol.packets.tcp.PacketTCP;
+import su.plo.voice.protocol.packets.tcp.MessageTcp;
+import su.plo.voice.server.VoiceServer;
+import su.plo.voice.server.mod.network.ServerNetworkHandlerMod;
 
-public class ServerNetworkHandlerForge extends ServerNetworkHandler {
-    public void handle(ServerPlayer player, FriendlyByteBuf buf) {
-        try {
-            byte[] data = new byte[buf.readableBytes()];
-            buf.duplicate().readBytes(data);
-            ByteArrayDataInput in = ByteStreams.newDataInput(data);
+public class ServerNetworkHandlerForge extends ServerNetworkHandlerMod {
+    public void handle(ServerPlayer serverPlayer, FriendlyByteBuf buf) {
+        VoicePlayer player = VoiceServer.getAPI().getPlayerManager()
+                .getByUniqueId(serverPlayer.getUUID());
 
-            Packet pkt = PacketTCP.read(in);
-            if (pkt instanceof ClientConnectPacket packet) {
-                this.handle(packet, player);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        byte[] data = new byte[buf.readableBytes()];
+        buf.duplicate().readBytes(data);
+        ByteArrayDataInput in = ByteStreams.newDataInput(data);
+
+        Packet pkt = MessageTcp.read(in);
+        if (pkt != null) {
+            pkt.handle(getOrCreateListener(player));
         }
     }
 

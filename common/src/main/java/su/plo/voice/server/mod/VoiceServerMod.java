@@ -36,8 +36,12 @@ public abstract class VoiceServerMod extends VoiceServer {
 
     @Override
     protected void start() {
-        this.playerManager = new PlayerManagerMod();
-        this.entityManager = new EntityManagerMod();
+        if (playerManager == null) {
+            this.playerManager = new PlayerManagerMod();
+        }
+        if (entityManager == null) {
+            this.entityManager = new EntityManagerMod();
+        }
 
         network.start();
         super.start();

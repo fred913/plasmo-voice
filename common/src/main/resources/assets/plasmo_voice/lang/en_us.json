@@ -39,6 +39,8 @@
     "gui.plasmo_voice.general.voice_chat_volume.tooltip_2": "may cause distortion.",
     "gui.plasmo_voice.general.voice_chat_volume.priority": "Priority volume",
     "gui.plasmo_voice.general.occlusion": "Sound occlusion",
+    "gui.plasmo_voice.general.occlusion.server_forced": "Sound occlusion is forced on this server",
+    "gui.plasmo_voice.general.occlusion.sound_physics": "Sound physics has built-in sound occlusion",
     "gui.plasmo_voice.general.occlusion.tooltip_1": "Casts a ray from the player to each sound source,",
     "gui.plasmo_voice.general.occlusion.tooltip_2": "and muffles the sound if blocks are in the way.",
     "gui.plasmo_voice.general.occlusion.tooltip_3": "",

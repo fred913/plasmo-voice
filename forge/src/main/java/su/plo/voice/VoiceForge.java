@@ -10,10 +10,10 @@ import net.minecraftforge.fmllegacy.network.NetworkRegistry;
 import net.minecraftforge.fmllegacy.network.event.EventNetworkChannel;
 import su.plo.voice.client.VoiceClient;
 import su.plo.voice.client.VoiceClientForge;
-import su.plo.voice.client.network.ClientNetworkHandler;
 import su.plo.voice.server.VoiceServer;
 import su.plo.voice.server.VoiceServerForge;
-import su.plo.voice.server.mod.network.ServerNetworkHandlerForge;
+import su.plo.voice.server.mod.VoiceServerMod;
+import su.plo.voice.server.network.ServerNetworkHandlerForge;
 
 @Mod("plasmo_voice")
 public class VoiceForge {
@@ -30,7 +30,7 @@ public class VoiceForge {
         MinecraftForge.EVENT_BUS.register(new VoiceServerForge());
 
         EventNetworkChannel channel = NetworkRegistry.newEventChannel(
-                VoiceServer.PLASMO_VOICE,
+                VoiceServerMod.PLASMO_VOICE,
                 () -> NetworkRegistry.ACCEPTVANILLA,
                 NetworkRegistry.ACCEPTVANILLA::equals,
                 NetworkRegistry.ACCEPTVANILLA::equals
@@ -42,13 +42,12 @@ public class VoiceForge {
             }
 
             if (e.getSource().get().getDirection().equals(NetworkDirection.PLAY_TO_CLIENT)) {
-                if (VoiceClient.getInstance().getNetwork() == null) {
-                    VoiceClient.getInstance().setNetwork(
-                            new ClientNetworkHandler(e.getSource().get().getNetworkManager())
-                    );
+                if (VoiceClient.getNetwork() == null) {
+                    ((VoiceClientForge) VoiceClient.getInstance())
+                            .initializeNetwork(e.getSource().get().getNetworkManager());
                 }
 
-                VoiceClient.getInstance().getNetwork().handle(e.getPayload());
+                VoiceClient.getNetwork().handle(e.getPayload());
             } else {
                 ((ServerNetworkHandlerForge) VoiceServer.getNetwork()).handle(e.getSource().get().getSender(), e.getPayload());
             }

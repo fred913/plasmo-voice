@@ -1,4 +1,4 @@
-package su.plo.voice.server.mod.network;
+package su.plo.voice.server.network;
 
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
@@ -15,30 +15,13 @@ import su.plo.voice.protocol.packets.tcp.MessageTcp;
 import su.plo.voice.server.VoiceServer;
 import su.plo.voice.server.config.ServerConfigFabric;
 import su.plo.voice.server.mod.VoiceServerMod;
+import su.plo.voice.server.mod.network.ServerNetworkHandlerMod;
 import su.plo.voice.server.mod.player.PlayerManagerMod;
 import su.plo.voice.server.socket.SocketServerUDP;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 public class ServerNetworkHandlerFabric extends ServerNetworkHandlerMod {
-    private static final ResourceLocation FML_HANDSHAKE = new ResourceLocation("fml:handshake");
-    private final Set<UUID> fabricPlayers = new HashSet<>();
-
-    @Override
-    public boolean isVanillaPlayer(ServerPlayer player) {
-        return !fabricPlayers.contains(player.getUUID());
-    }
-
-    @Override
-    public void handleQuit(ServerPlayer player) {
-        fabricPlayers.remove(player.getUUID());
-
-        super.handleQuit(player);
-    }
-
     @Override
     public void handleRegisterChannels(List<ResourceLocation> channels, ServerPlayer serverPlayer) {
         if (channels.size() > 0) {

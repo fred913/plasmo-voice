@@ -24,6 +24,7 @@ max_priority_distance: 0
 
 # default: Everyone have permission by default
 # op: Only operators have permission
+# true: (ru_RU) Ни у кого нет прав на это
 # Use /vperms command to give permissions to non-operators
 permissions:
   "voice.list": default
@@ -36,6 +37,8 @@ permissions:
   "voice.mutelist": op
   "voice.reload": op
   "voice.permissions": op
+  "voice.force_sound_occlusion": false
+  "voice.icons": default
 
 # Example:
 # Voice distance is 16

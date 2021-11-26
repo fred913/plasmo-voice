@@ -84,6 +84,13 @@ dependencies {
     // Lombok
     compileOnly("org.projectlombok:lombok:1.18.20")
     annotationProcessor("org.projectlombok:lombok:1.18.20")
+
+    // LuckPerms
+    compileOnly("net.luckperms:api:5.3")
+}
+
+repositories {
+    maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
 }
 
 tasks {

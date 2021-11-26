@@ -1,4 +1,4 @@
-package su.plo.voice.client.sound;
+package su.plo.voice.client.sound.openal;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
@@ -7,10 +7,12 @@ import org.lwjgl.openal.EXTThreadLocalContext;
 import su.plo.voice.client.VoiceClient;
 import su.plo.voice.client.gui.VoiceSettingsScreen;
 import su.plo.voice.client.socket.SocketClientUDPListener;
+import su.plo.voice.client.sound.AudioCapture;
+import su.plo.voice.client.sound.Compressor;
+import su.plo.voice.client.sound.FixedJitterBuffer;
+import su.plo.voice.client.sound.Occlusion;
 import su.plo.voice.client.sound.clock.RtpClock;
 import su.plo.voice.client.sound.clock.WallClock;
-import su.plo.voice.client.sound.openal.AlUtil;
-import su.plo.voice.client.sound.openal.CustomSource;
 import su.plo.voice.opus.Decoder;
 import su.plo.voice.protocol.packets.udp.AudioRawS2CPacket;
 import su.plo.voice.protocol.packets.udp.MessageUdp;
@@ -124,8 +126,6 @@ public abstract class AbstractAudioSource extends Thread {
      * Вызывается до основной обработки пакета
      * В основном здесь проверки на мут
      *
-     * @param packet
-     *
      * @return true, если можно продолжать дальше
      */
     protected boolean preProcess(AudioRawS2CPacket packet) {
@@ -171,7 +171,7 @@ public abstract class AbstractAudioSource extends Thread {
 
         short[] decoded = decoder.process(packet.getData());
         if (VoiceClient.getClientConfig().compressor.get()) {
-            compressor.compress(decoded);
+            decoded = compressor.compress(decoded);
         }
 
         source.write(decoded);
@@ -197,9 +197,19 @@ public abstract class AbstractAudioSource extends Thread {
     }
 
     /**
+     * ru_RU
+     * Проверяет включен ли sound occlusion
+     */
+    protected boolean isSoundOcclusion() {
+        return (!VoiceClient.getSoundEngine().isSoundPhysics() && VoiceClient.getClientConfig().occlusion.get()) ||
+                VoiceClient.getServerConfig().isForceSoundOcclusion();
+    }
+
+    /**
+     * ru_RU
      * Пересчитывает коэффициент затухания
      */
-    public double calculateOcclusion(Player localPlayer, Vec3 position) {
+    protected double calculateOcclusion(Player localPlayer, Vec3 position) {
         double occlusion = Occlusion.getOccludedPercent(localPlayer.level, localPlayer, position);
         if(lastOcclusion >= 0) {
             if(occlusion > lastOcclusion) {
@@ -229,7 +239,6 @@ public abstract class AbstractAudioSource extends Thread {
     /**
      * ru_RU
      * Обновляет часы и пишет в житер буфер
-     * @param message
      */
     public void write(MessageUdp message) {
         if (isDead()) {

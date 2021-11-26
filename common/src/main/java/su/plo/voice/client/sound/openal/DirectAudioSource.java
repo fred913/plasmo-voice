@@ -2,7 +2,6 @@ package su.plo.voice.client.sound.openal;
 
 import net.minecraft.world.phys.Vec3;
 import su.plo.voice.client.VoiceClient;
-import su.plo.voice.client.sound.AbstractAudioSource;
 import su.plo.voice.protocol.packets.udp.AudioRawS2CPacket;
 
 public class DirectAudioSource extends AbstractAudioSource {

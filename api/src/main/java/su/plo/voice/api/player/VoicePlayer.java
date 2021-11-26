@@ -33,6 +33,8 @@ public interface VoicePlayer {
 
     boolean hasPermission(String permission);
 
+    void updatePermissions();
+
     int getForceDistance();
 
     int getForcePriorityDistance();

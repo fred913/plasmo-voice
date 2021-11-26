@@ -7,7 +7,7 @@ import su.plo.voice.server.VoiceServer;
 import su.plo.voice.server.mod.player.PlayerManagerMod;
 
 public class CommandManager {
-    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher, boolean permissions) {
         VoiceList.register(dispatcher);
         VoiceReconnect.register(dispatcher);
         VoiceReload.register(dispatcher);
@@ -15,7 +15,9 @@ public class CommandManager {
         VoiceMute.register(dispatcher);
         VoiceMuteList.register(dispatcher);
         VoiceUnmute.register(dispatcher);
-        VoicePermissions.register(dispatcher);
+        if (permissions) {
+            VoicePermissions.register(dispatcher);
+        }
     }
 
     public static boolean requiresPermission(CommandSourceStack source, String permission) {

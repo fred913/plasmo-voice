@@ -2,7 +2,6 @@ package su.plo.voice.client.sound.openal;
 
 import net.minecraft.world.entity.player.Player;
 import su.plo.voice.client.VoiceClient;
-import su.plo.voice.client.sound.AbstractAudioSource;
 import su.plo.voice.protocol.data.VoiceClientInfo;
 import su.plo.voice.protocol.packets.udp.AudioPlayerS2CPacket;
 import su.plo.voice.protocol.packets.udp.AudioRawS2CPacket;
@@ -48,7 +47,7 @@ public class PlayerAudioSource extends AbstractAudioSource {
                 ? maxDistance / VoiceClient.getServerConfig().getPriorityFadeDivisor()
                 : maxDistance / VoiceClient.getServerConfig().getFadeDivisor();
 
-        if(!VoiceClient.getSoundEngine().isSoundPhysics() && VoiceClient.getClientConfig().occlusion.get()) {
+        if(isSoundOcclusion()) {
             percentage *= (float) (1D - calculateOcclusion(localPlayer, player.position()));
         }
 

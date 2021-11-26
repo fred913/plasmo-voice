@@ -28,8 +28,8 @@ public abstract class VoiceServer implements ConfigMessages {
 
     public static final Logger LOGGER = LogManager.getLogger("Plasmo Voice");
 
-    protected  PlayerManager playerManager;
-    protected  EntityManager entityManager;
+    protected PlayerManager playerManager;
+    protected EntityManager entityManager;
     protected final ServerNetworkHandler network;
 
     private SocketServerUDP udpServer;
@@ -55,7 +55,6 @@ public abstract class VoiceServer implements ConfigMessages {
 
         API = new VoiceServerAPIImpl(playerManager, entityManager);
         PlasmoVoiceProvider.setAPI(API);
-        System.out.println(PlasmoVoiceProvider.getAPI());
 
         udpServer = new SocketServerUDP(serverConfig.getIp(), serverConfig.getPort());
         udpServer.start();

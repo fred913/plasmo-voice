@@ -32,6 +32,14 @@ public class AudioUtils {
         return floats;
     }
 
+    public static float[] shortsToFloatsObs(short[] shorts) {
+        float[] floats = new float[shorts.length];
+        for (int i = 0; i < shorts.length; i++) {
+            floats[i] = ((float) shorts[i]) / 0x8000;
+        }
+        return floats;
+    }
+
     public static byte[] floatsToBytes(float[] floats) {
         byte[] bytes = new byte[floats.length * 2];
         for (int i = 0; i < bytes.length; i += 2) {
@@ -48,6 +56,14 @@ public class AudioUtils {
         short[] shorts = new short[floats.length];
         for (int i = 0; i < floats.length; i++) {
             shorts[i] = ((Float) floats[i]).shortValue();
+        }
+        return shorts;
+    }
+
+    public static short[] floatsToShortsObs(float[] floats) {
+        short[] shorts = new short[floats.length];
+        for (int i = 0; i < floats.length; i++) {
+            shorts[i] = (short) (floats[i] * 0x8000);
         }
         return shorts;
     }
@@ -72,7 +88,6 @@ public class AudioUtils {
         return (float)Math.exp(-1.0f / (sampleRate * time));
     }
 
-
     public static boolean hasHigherLevel(short[] samples, double targetLevel) {
         for (int i = 0; i < samples.length; i += 50) {
             double chunkLevel = calculateAudioLevel(samples, i, Math.min(i + 50, samples.length));
@@ -96,7 +111,7 @@ public class AudioUtils {
 
     /**
      * Calculates the audio level of a signal with specific <tt>samples</tt>.
-     * Source: https://github.com/jitsi/libjitsi/blob/master/src/org/jitsi/impl/neomedia/audiolevel/AudioLevelCalculator.java
+     * Source: https://github.com/jitsi/libjitsi/blob/master/src/main/java/org/jitsi/impl/neomedia/audiolevel/AudioLevelCalculator.java
      *
      * @param samples the samples of the signal to calculate the audio level of
      * @param offset the offset in <tt>samples</tt> in which the samples start
@@ -129,9 +144,9 @@ public class AudioUtils {
             else if (db < 0D)
                 db = 0D;
         } else {
-            db = -127D;
+            db = 127D;
         }
 
-        return db;
+        return -db;
     }
 }

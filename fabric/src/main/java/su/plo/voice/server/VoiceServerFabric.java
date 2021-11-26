@@ -8,11 +8,14 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
 import su.plo.voice.server.config.ServerConfigFabric;
 import su.plo.voice.server.mod.VoiceServerMod;
 import su.plo.voice.server.mod.commands.CommandManager;
-import su.plo.voice.server.mod.network.ServerNetworkHandlerFabric;
 import su.plo.voice.server.mod.network.ServerNetworkHandlerMod;
+import su.plo.voice.server.network.ServerNetworkHandlerFabric;
+import su.plo.voice.server.player.PlayerManagerLP;
 
 public class VoiceServerFabric extends VoiceServerMod implements ModInitializer {
     private int[] version = new int[3];
@@ -51,12 +54,20 @@ public class VoiceServerFabric extends VoiceServerMod implements ModInitializer 
         );
 
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) ->
-                CommandManager.register(dispatcher)
+                CommandManager.register(dispatcher, !FabricLoader.getInstance().isModLoaded("luckperms"))
         );
     }
 
     @Override
     protected void start() {
+        if (FabricLoader.getInstance().isModLoaded("luckperms")) {
+            try {
+                LuckPerms luckPerms = LuckPermsProvider.get();
+                this.playerManager = new PlayerManagerLP(luckPerms);
+            } catch (IllegalStateException e) {
+                e.printStackTrace();
+            }
+        }
         super.start();
     }
 

@@ -4,6 +4,10 @@ val fabricVersion: String by rootProject
 val modVersion: String by rootProject
 val mavenGroup: String by rootProject
 
+base {
+    archivesBaseName = "plasmovoice"
+}
+
 dependencies {
     minecraft("com.mojang:minecraft:${minecraftVersion}")
     mappings(minecraft.officialMojangMappings())

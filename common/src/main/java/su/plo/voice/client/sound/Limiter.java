@@ -25,12 +25,12 @@ public class Limiter {
     }
 
     public synchronized short[] limit(short[] audio) {
-        float[] audioFloats = AudioUtils.shortsToFloats(audio);
+        float[] audioFloats = AudioUtils.shortsToFloatsObs(audio);
 
         analyzeEnvelope(audioFloats);
         process(audioFloats);
 
-        return AudioUtils.floatsToShorts(audioFloats);
+        return AudioUtils.floatsToShortsObs(audioFloats);
     }
 
     private synchronized void analyzeEnvelope(float[] samples) {

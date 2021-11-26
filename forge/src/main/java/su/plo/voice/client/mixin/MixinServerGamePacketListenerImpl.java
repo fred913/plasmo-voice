@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import su.plo.voice.server.VoiceServer;
 import su.plo.voice.server.VoiceServerForge;
 
 @Mixin(ServerGamePacketListenerImpl.class)
@@ -20,7 +21,7 @@ public abstract class MixinServerGamePacketListenerImpl {
     @Inject(method = "handleCustomPayload", at = @At("HEAD"))
     public void handleCustomPayload(ServerboundCustomPayloadPacket packet, CallbackInfo ci) {
         if (packet.getIdentifier().equals(register)) {
-            VoiceServerForge.onChannelRegister(packet, this.getPlayer());
+            ((VoiceServerForge) VoiceServer.getInstance()).onChannelRegister(packet, this.getPlayer());
         }
     }
 }

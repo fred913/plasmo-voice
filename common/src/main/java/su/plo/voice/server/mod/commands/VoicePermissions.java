@@ -12,6 +12,7 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.GameProfileArgument;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.players.PlayerList;
+import su.plo.voice.api.player.VoicePlayer;
 import su.plo.voice.server.VoiceServer;
 import su.plo.voice.server.config.Configuration;
 import su.plo.voice.server.mod.player.PlayerManagerMod;
@@ -104,12 +105,15 @@ public class VoicePermissions {
             return;
         }
 
+        PlayerManagerMod playerManager = (PlayerManagerMod) VoiceServer.getAPI().getPlayerManager();
+        VoicePlayer player = playerManager.getByUniqueId(profile.getId());
+
         ctx.getSource().sendSuccess(
                 new TextComponent(
                         VoiceServer.getInstance().getMessagePrefix("permissions.check")
                                 .replace("{player}", profile.getName())
                                 .replace("{permission}", permission)
-                                .replace("{value}", String.valueOf(((PlayerManagerMod) VoiceServer.getAPI().getPlayerManager()).hasPermission(profile.getId(), permission)))
+                                .replace("{value}", String.valueOf(player.hasPermission(permission)))
                 ),
                 false
         );
@@ -123,8 +127,9 @@ public class VoicePermissions {
         }
 
         PlayerManagerMod playerManager = (PlayerManagerMod) VoiceServer.getAPI().getPlayerManager();
+        VoicePlayer player = playerManager.getByUniqueId(profile.getId());
 
-        if (playerManager.hasPermission(profile.getId(), permission) == value) {
+        if (playerManager.hasPermission(player.getUniqueId(), permission) == value) {
             ctx.getSource().sendFailure(
                     new TextComponent(
                             VoiceServer.getInstance().getMessagePrefix("permissions.already")
@@ -136,7 +141,7 @@ public class VoicePermissions {
             return;
         }
 
-        playerManager.setPermission(profile.getId(), permission, value);
+        playerManager.setPermission(player, permission, value);
         ctx.getSource().sendSuccess(
                 new TextComponent(
                         VoiceServer.getInstance().getMessagePrefix("permissions.set")
@@ -156,6 +161,7 @@ public class VoicePermissions {
         }
 
         PlayerManagerMod playerManager = (PlayerManagerMod) VoiceServer.getAPI().getPlayerManager();
+        VoicePlayer player = playerManager.getByUniqueId(profile.getId());
 
         Map<String, Boolean> perms = playerManager.getPermissions().get(profile.getId());
         if (perms == null || !perms.containsKey(permission)) {
@@ -169,7 +175,7 @@ public class VoicePermissions {
             return;
         }
 
-        playerManager.unSetPermission(profile.getId(), permission);
+        playerManager.unSetPermission(player, permission);
         ctx.getSource().sendSuccess(
                 new TextComponent(
                         VoiceServer.getInstance().getMessagePrefix("permissions.unset")

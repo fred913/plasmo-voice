@@ -49,8 +49,9 @@ public class VoiceHud {
                     0,
                     16,
                     16);
-        } else if(VoiceClient.getClientConfig().microphoneMuted.get() || !VoiceClient.recorder.isAvailable()
-                || VoiceClient.getNetwork().isPlayerMuted(player.getUUID())) {
+        } else if(VoiceClient.getClientConfig().microphoneMuted.get() || !VoiceClient.recorder.isAvailable() ||
+                !VoiceClient.getServerConfig().isCanSpeak() ||
+                VoiceClient.getNetwork().isPlayerMuted(player.getUUID())) {
             RenderSystem.setShader(GameRenderer::getPositionTexShader);
             RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
             RenderSystem.setShaderTexture(0, VoiceClient.ICONS);

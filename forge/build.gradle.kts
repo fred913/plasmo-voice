@@ -2,6 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.matthewprenger.cursegradle.CurseArtifact
 import com.matthewprenger.cursegradle.CurseProject
 import com.matthewprenger.cursegradle.CurseRelation
+import net.fabricmc.loom.api.LoomGradleExtensionAPI
 import net.fabricmc.loom.task.RemapJarTask
 
 val minecraftVersion: String by rootProject
@@ -15,6 +16,12 @@ val curseSupportedVersions: String by rootProject
 
 configurations {
     create("shadowCommon")
+}
+
+configure<LoomGradleExtensionAPI> {
+    forge {
+        mixinConfig("plasmovoice.mixins.json")
+    }
 }
 
 architectury {
@@ -35,6 +42,13 @@ dependencies {
 
     "forge"("net.minecraftforge:forge:${forgeVersion}")
 
+    implementation(project(":api")) {
+        isTransitive = false
+    }
+    "shadowCommon"(project(":api")) {
+        isTransitive = false
+    }
+
     implementation(project(":common")) {
         isTransitive = false
     }
@@ -49,10 +63,6 @@ dependencies {
     implementation("org.yaml:snakeyaml:1.29")
     "shadowCommon"("org.yaml:snakeyaml:1.29")
 
-    // Plasmo Voice protocol
-    implementation("su.plo.voice:common:2.0.0")
-    "shadowCommon"("su.plo.voice:common:2.0.0")
-
     // Opus
     implementation("su.plo.voice:opus:1.1.2")
     "shadowCommon"("su.plo.voice:opus:1.1.2")
@@ -63,9 +73,6 @@ dependencies {
 
     compileOnly("org.projectlombok:lombok:1.18.20")
     annotationProcessor("org.projectlombok:lombok:1.18.20")
-
-    testCompileOnly("org.projectlombok:lombok:1.18.20")
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.20")
 }
 
 tasks {

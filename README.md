@@ -1,7 +1,6 @@
 ### Planned features:
 - [ ] Merge Spigot into the main branch
 - [ ] AES encryption (with RSA handshake for the offline mode)
-- [ ] [#85](https://github.com/plasmoapp/plasmo-voice/issues/85)
 - [ ] [#73](https://github.com/plasmoapp/plasmo-voice/issues/73)
 - [X] New types of sound sources
   - [X] Player source
@@ -13,8 +12,8 @@
 - [ ] API
   - [X] Ability to create sources and send audio packets with API
 - [ ] Optional ProtocolLib for improved check of mod installation
-- [ ] Dynamic permission updates 
-- [ ] Move common mixins to "common" project
+- [X] Dynamic permission updates [#85](https://github.com/plasmoapp/plasmo-voice/issues/85)
+- [X] LuckPerms support on fabric
 ### Maybe:
 - [ ] Use netty for UDP connection
 - [ ] NetEQ (audio jitter buffer and packet loss concealer)

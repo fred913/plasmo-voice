@@ -1,7 +1,6 @@
 package su.plo.voice.client.sound;
 
 import su.plo.voice.client.VoiceClient;
-import su.plo.voice.client.gui.VoiceSettingsScreen;
 import su.plo.voice.utils.AudioUtils;
 
 // todo priority sidechain
@@ -17,14 +16,14 @@ public class Compressor {
     private float envelope;
 
     public synchronized short[] compress(short[] audio) {
-        float[] audioFloats = AudioUtils.shortsToFloats(audio);
+        float[] audioFloats = AudioUtils.shortsToFloatsObs(audio);
 
         analyzeEnvelope(audioFloats);
         process(audioFloats);
 
         limiter.limit(audioFloats);
 
-        return AudioUtils.floatsToShorts(audioFloats);
+        return AudioUtils.floatsToShortsObs(audioFloats);
     }
 
     private synchronized void analyzeEnvelope(float[] samples) {
@@ -45,7 +44,6 @@ public class Compressor {
             this.envelopeBuf[i] = Math.max(this.envelopeBuf[i], env);
         }
         this.envelope = envelopeBuf[samples.length - 1];
-        System.out.println(this.envelope);
     }
 
     private synchronized void process(float[] samples) {
@@ -56,7 +54,6 @@ public class Compressor {
             float envDB = AudioUtils.mulToDB(this.envelopeBuf[i]);
 
             float compressorGain = compressorSlope * (compressorThreshold - envDB);
-            VoiceSettingsScreen.roflanDebugText = String.valueOf(compressorGain);
             compressorGain = AudioUtils.dbToMul(Math.min(0, compressorGain));
 
             samples[i] *= compressorGain * outputGain;

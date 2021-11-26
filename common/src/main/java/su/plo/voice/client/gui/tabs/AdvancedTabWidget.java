@@ -25,7 +25,9 @@ public class AdvancedTabWidget extends TabWidget {
 
         ClientConfig config = VoiceClient.getClientConfig();
 
-        ToggleButton rnNoise = new ToggleButton(0, 0, 97, 20, config.rnNoise,
+        ToggleButton rnNoise = new ToggleButton(this,
+                0, 0, 97, 20, 
+                config.rnNoise,
                 toggled -> {
                     VoiceClient.recorder.toggleRnNoise();
                 });
@@ -99,7 +101,7 @@ public class AdvancedTabWidget extends TabWidget {
         this.addEntry(new CategoryEntry(new TranslatableComponent("gui.plasmo_voice.advanced.compressor")));
         this.addEntry(new OptionEntry(
                 new TranslatableComponent("gui.plasmo_voice.advanced.compressor"),
-                new ToggleButton(0, 0, 97, 20, config.compressor,
+                new ToggleButton(this, 0, 0, 97, 20, config.compressor,
                         toggled -> {}),
                 VoiceClient.getClientConfig().compressor,
                 TextUtils.multiLine("gui.plasmo_voice.advanced.compressor.tooltip", 4),
@@ -128,14 +130,14 @@ public class AdvancedTabWidget extends TabWidget {
 
 
         ConfigIntegerSlider directionalSourcesAngle = new ConfigIntegerSlider(0, 0, 97, config.directionalSourcesAngle);
-        ToggleButton directionalSources = new ToggleButton(0, 0, 97, 20, config.directionalSources,
+        ToggleButton directionalSources = new ToggleButton(this, 0, 0, 97, 20, config.directionalSources,
                 toggled -> directionalSourcesAngle.active = toggled);
         directionalSourcesAngle.active = config.directionalSources.get();
 
         this.addEntry(new CategoryEntry(new TranslatableComponent("gui.plasmo_voice.advanced.engine")));
         this.addEntry(new OptionEntry(
                 new TranslatableComponent("gui.plasmo_voice.advanced.hrtf"),
-                new ToggleButton(0, 0, 97, 20, config.hrtf,
+                new ToggleButton(this, 0, 0, 97, 20, config.hrtf,
                         toggled -> VoiceClient.getSoundEngine().restart()),
                 config.hrtf,
                 TextUtils.multiLine("gui.plasmo_voice.advanced.hrtf.tooltip", 7),
@@ -174,7 +176,7 @@ public class AdvancedTabWidget extends TabWidget {
         this.addEntry(new CategoryEntry(new TranslatableComponent("gui.plasmo_voice.advanced.visual_ui")));
         this.addEntry(new OptionEntry(
                 new TranslatableComponent("gui.plasmo_voice.advanced.visual_ui.distance"),
-                new ToggleButton(0, 0, 97, 20, config.visualizeDistance,
+                new ToggleButton(this, 0, 0, 97, 20, config.visualizeDistance,
                         toggled -> {}),
                 config.visualizeDistance,
                 (button, element) -> {
@@ -183,7 +185,7 @@ public class AdvancedTabWidget extends TabWidget {
         );
         this.addEntry(new OptionEntry(
                 new TranslatableComponent("gui.plasmo_voice.advanced.visual_ui.priority"),
-                new ToggleButton(0, 0, 97, 20, config.showPriorityVolume,
+                new ToggleButton(this, 0, 0, 97, 20, config.showPriorityVolume,
                         toggled -> {
                             parent.updateGeneralTab();
                         }),
