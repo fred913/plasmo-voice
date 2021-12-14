@@ -14,6 +14,7 @@
 - [ ] Optional ProtocolLib for improved check of mod installation
 - [X] Dynamic permission updates [#85](https://github.com/plasmoapp/plasmo-voice/issues/85)
 - [X] LuckPerms support on fabric
+- [ ] Ability to adjust MTU size [#139](https://github.com/plasmoapp/plasmo-voice/issues/139)
 ### Maybe:
 - [ ] Use netty for UDP connection
 - [ ] NetEQ (audio jitter buffer and packet loss concealer)
