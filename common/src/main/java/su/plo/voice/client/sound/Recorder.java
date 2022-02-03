@@ -1,7 +1,6 @@
 package su.plo.voice.client.sound;
 
 import lombok.Getter;
-import lombok.Setter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import su.plo.voice.client.VoiceClient;
@@ -27,17 +26,12 @@ public class Recorder implements Runnable {
     @Getter
     private static final int mtuSize = 1024;
     @Getter
-    private static int sampleRate = 24000;
+    private static int sampleRate = 0;
     @Getter
-    private static int frameSize = (sampleRate / 1000) * 2 * 20;
+    private static int frameSize = 0;
     @Getter
-    private static AudioFormat format = new AudioFormat(sampleRate, 16, 1, true, false);
-    @Getter
-    private static AudioFormat stereoFormat = new AudioFormat(sampleRate, 16, 2, true, false);
+    private static AudioFormat format = null;
 
-    @Setter
-    @Getter
-    private boolean running;
     @Getter
     private boolean available;
     @Getter
@@ -75,7 +69,8 @@ public class Recorder implements Runnable {
      * @param rate New sample rate
      */
     public void updateSampleRate(int rate) {
-        if (rate == Recorder.getSampleRate()) {
+        VoiceClient.LOGGER.info("Server sample rate: {}", rate);
+        if (rate == Recorder.getSampleRate() && thread != null) {
             return;
         }
 
@@ -96,35 +91,20 @@ public class Recorder implements Runnable {
         sampleRate = rate;
         frameSize = (sampleRate / 1000) * 2 * 20;
 
-        if (this.encoder != null) {
-            this.encoder.close();
+        if (encoder != null) {
+            encoder.close();
         }
         this.encoder = new OpusEncoder(sampleRate, frameSize, mtuSize, Opus.OPUS_APPLICATION_VOIP);
 
-        if (VoiceClient.isConnected()) {
-            this.start();
-        }
+        this.start();
     }
 
     /**
      * Interrupts thread, closes capture device and opus encoder
      */
     public void close() {
-        this.running = false;
-        this.sequenceNumber = 0L;
-        this.lastBuffer = null;
-        if (this.encoder != null) {
-            this.encoder.close();
-        }
-
-        if (microphone.isOpen()) {
-            microphone.stop();
-            microphone.close();
-            thread = null;
-        }
-
-        synchronized (this) {
-            this.notifyAll();
+        if (thread != null) {
+            thread.interrupt();
         }
     }
 
@@ -134,6 +114,7 @@ public class Recorder implements Runnable {
                 try {
                     this.wait();
                 } catch (InterruptedException ignored) {
+                    return;
                 }
             }
         }
@@ -173,47 +154,45 @@ public class Recorder implements Runnable {
             this.encoder = new OpusEncoder(sampleRate, frameSize, mtuSize, Opus.OPUS_APPLICATION_VOIP);
         }
 
-        this.running = true;
-        while (running) {
-            final LocalPlayer player = client.player;
-            if (player == null) {
-                this.running = false;
-                break;
-            }
-
-            byte[] normBuffer = readBuffer();
-
-            if (!VoiceClient.isConnected()) {
-                this.running = false;
-                break;
-            }
-
-            // muted
-            if ((VoiceClient.getServerConfig().getMuted().containsKey(player.getUUID()) || VoiceClient.getClientConfig().microphoneMuted.get()
-                    || VoiceClient.getClientConfig().speakerMuted.get())) {
-                VoiceClient.setSpeaking(false);
-                VoiceClient.setSpeakingPriority(false);
-
-                try {
+        VoiceClient.LOGGER.info("Recorder started");
+        while (!thread.isInterrupted()) {
+            try {
+                final LocalPlayer player = client.player;
+                if (player == null || !VoiceClient.isConnected()) {
                     Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
+                    continue;
                 }
-                continue;
-            }
 
-            if (normBuffer == null) {
-                continue;
-            }
+                byte[] normBuffer = readBuffer();
 
-            if (!VoiceClient.getClientConfig().voiceActivation.get() ||
-                    VoiceClient.getServerConfig().isVoiceActivationDisabled()) {
-                pushToTalk(normBuffer);
-            } else {
-                voiceActivation(normBuffer);
+                // muted
+                if (!VoiceClient.isSettingsOpen() &&
+                        (VoiceClient.getServerConfig().getMuted().containsKey(player.getUUID()) || VoiceClient.getClientConfig().microphoneMuted.get()
+                                || VoiceClient.getClientConfig().speakerMuted.get())) {
+                    VoiceClient.setSpeaking(false);
+                    VoiceClient.setSpeakingPriority(false);
+
+                    Thread.sleep(1000L);
+                    continue;
+                }
+
+                if (normBuffer == null) {
+                    Thread.sleep(5L);
+                    continue;
+                }
+
+                if (!VoiceClient.getClientConfig().voiceActivation.get() ||
+                        VoiceClient.getServerConfig().isVoiceActivationDisabled()) {
+                    pushToTalk(normBuffer);
+                } else {
+                    voiceActivation(normBuffer);
+                }
+            } catch (InterruptedException ignored) {
+                break;
             }
         }
 
-        this.close();
+        this.cleanup();
     }
 
     private void voiceActivation(byte[] normBuffer) {
@@ -314,15 +293,9 @@ public class Recorder implements Runnable {
             return;
         }
 
-        if (!VoiceClient.isSpeaking()) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException ignored) {
-            }
-            return;
+        if (VoiceClient.isSpeaking()) {
+            this.sendPacket(normBuffer);
         }
-
-        this.sendPacket(normBuffer);
     }
 
     /**
@@ -361,7 +334,6 @@ public class Recorder implements Runnable {
         }
 
         if (!VoiceClient.isConnected()) {
-            this.running = false;
             return;
         }
 
@@ -374,17 +346,13 @@ public class Recorder implements Runnable {
                                 ? VoiceClient.getServerConfig().getPriorityDistance()
                                 : VoiceClient.getServerConfig().getDistance()
                 ));
-            } else {
-                this.running = false;
             }
         } catch (IOException ignored) {
-            this.running = false;
         }
     }
 
     private void sendEndPacket() {
         if (!VoiceClient.isConnected()) {
-            this.running = false;
             return;
         }
 
@@ -414,23 +382,37 @@ public class Recorder implements Runnable {
         }
     }
 
+    private void cleanup() {
+        VoiceClient.LOGGER.info("Recorder cleanup");
+        this.sequenceNumber = 0L;
+        this.lastBuffer = null;
+        if (encoder != null) {
+            encoder.close();
+        }
+
+        if (microphone.isOpen()) {
+            microphone.stop();
+            microphone.close();
+            thread = null;
+        }
+
+        synchronized (this) {
+            this.notifyAll();
+        }
+    }
+
     /**
      * Waiting capture device to close
      */
     // todo is it necessary at all?
     public CompletableFuture<Void> waitForClose() {
         return CompletableFuture.runAsync(() -> {
-            this.running = false;
+            this.close();
+
             synchronized (this) {
                 try {
                     this.wait(1000L); // wait for 1 sec and just ignore it if notify not called
                 } catch (InterruptedException ignored) {
-                }
-            }
-
-            if (this.thread != null) {
-                if (!this.thread.isInterrupted()) {
-                    this.thread.interrupt();
                 }
             }
         });

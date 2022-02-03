@@ -45,7 +45,6 @@
     "gui.plasmo_voice.general.occlusion.tooltip_4": "Useful if you don’t want to hear people from",
     "gui.plasmo_voice.general.occlusion.tooltip_5": "the other rooms, but sometimes doesn’t work properly,",
     "gui.plasmo_voice.general.occlusion.tooltip_6": "so it’s better to keep it disabled when you don’t need it.",
-    "gui.plasmo_voice.general.not_available": "Not available",
 
     "gui.plasmo_voice.general.microphone": "Microphone",
     "gui.plasmo_voice.general.microphone.volume": "Microphone volume",
@@ -58,6 +57,7 @@
     "gui.plasmo_voice.general.priority_distance.tooltip_3": "",
     "gui.plasmo_voice.general.priority_distance.tooltip_4": "Requires permission on the server, and also,",
     "gui.plasmo_voice.general.priority_distance.tooltip_5": "don’t forget to bind it in the hotkeys tab.",
+    "gui.plasmo_voice.general.not_available": "Not available",
 
     "gui.plasmo_voice.general.activation": "Activation",
     "gui.plasmo_voice.general.activation.type": "Activation type",
@@ -155,6 +155,10 @@
     "gui.plasmo_voice.advanced.visual_ui.priority": "Separate priority volume",
     "gui.plasmo_voice.advanced.visual_ui.priority.tooltip_1": "In the general tab there will be",
     "gui.plasmo_voice.advanced.visual_ui.priority.tooltip_2": "two volume sliders, instead of one",
+
+    "gui.plasmo_voice.advanced.sp.mic_reverb": "Microphone Reverb",
+    "gui.plasmo_voice.advanced.sp.mic_reverb.tooltip_1": "You will hear the reverb of your microphone when talking",
+    "gui.plasmo_voice.advanced.sp.mic_reverb_volume": "Mic Reverb Volume",
 
 
     "gui.plasmo_voice.hotkeys": "Hotkeys",

@@ -131,7 +131,7 @@ public abstract class VoiceClient {
             socketUDP.close();
         }
 
-        recorder.setRunning(false);
+        recorder.close();
         serverConfig = null;
 
         SocketClientUDPQueue.talking.clear();
@@ -142,6 +142,10 @@ public abstract class VoiceClient {
     public static boolean isMicrophoneLoopback() {
         return (Minecraft.getInstance().screen instanceof VoiceSettingsScreen) &&
                 ((VoiceSettingsScreen) Minecraft.getInstance().screen).getSource() != null;
+    }
+
+    public static boolean isSettingsOpen() {
+        return Minecraft.getInstance().screen instanceof VoiceSettingsScreen;
     }
 
     public static boolean isConnected() {
