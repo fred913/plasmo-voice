@@ -38,6 +38,7 @@ public class CustomSoundEngine {
     @Getter
     public final Listener listener;
     public boolean initialized;
+    private boolean failed;
     @Getter
     private boolean hrtfSupported;
     @Getter
@@ -54,6 +55,10 @@ public class CustomSoundEngine {
     public synchronized CustomSource createSource() {
         if (this.initialized) {
             return CustomSource.create();
+        }
+
+        if (this.failed) {
+            return null;
         }
 
         // open device/ctx if not opened
@@ -84,7 +89,12 @@ public class CustomSoundEngine {
         this.closeSync();
         this.preInit();
 
-        this.devicePointer = openDevice();
+        try {
+            this.devicePointer = openDevice();
+        } catch (IllegalStateException ignored) {
+            this.failed = true;
+            return;
+        }
         ALCCapabilities aLCCapabilities = ALC.createCapabilities(this.devicePointer);
         if (AlUtil.checkAlcErrors(this.devicePointer, "Get capabilities")) {
             throw new IllegalStateException("Failed to get OpenAL capabilities");
@@ -140,6 +150,7 @@ public class CustomSoundEngine {
         this.listener.setGain(1.0F);
 
         this.initialized = true;
+        this.failed = false;
         this.postInit();
 
         executor.scheduleAtFixedRate(() -> {
@@ -183,7 +194,7 @@ public class CustomSoundEngine {
     }
 
     // devices
-    private long openDevice() {
+    private long openDevice() throws IllegalStateException {
         try {
             return openDevice(getCurrentDevice());
         } catch (IllegalStateException ignored) {
@@ -197,7 +208,7 @@ public class CustomSoundEngine {
         throw new IllegalStateException("Failed to open OpenAL device");
     }
 
-    private long openDevice(String deviceName) {
+    private long openDevice(String deviceName) throws IllegalStateException {
         long l;
         if (deviceName == null) {
             // default device
